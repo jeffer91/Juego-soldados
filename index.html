@@ -31,10 +31,10 @@
     <main class="game-shell">
       <canvas id="gameCanvas" aria-label="Campo de batalla de RBTwar"></canvas>
 
-      <div id="tutorial" class="tutorial">
-        <span><b>1</b> Toca un pelotón azul</span>
-        <span><b>2</b> Toca una base</span>
-        <span><b>3</b> Destruye el CORE rojo</span>
+      <div id="tutorial" class="tutorial hidden">
+        <span><b>1</b> Espera a que salgan robots de tu base</span>
+        <span><b>2</b> Toca un pelotón azul</span>
+        <span><b>3</b> Toca una base objetivo</span>
         <button id="tutorialClose" type="button">Listo</button>
       </div>
 
@@ -48,6 +48,22 @@
       </div>
 
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+      <section id="startScreen" class="start-screen" aria-modal="true" role="dialog">
+        <div class="start-card">
+          <div class="start-logo">R</div>
+          <div class="start-copy">
+            <small>ESTRATEGIA DE ROBOTS</small>
+            <h1>RBTwar</h1>
+            <p>Conquista bases, forma pelotones y destruye el CORE enemigo.</p>
+          </div>
+          <div class="start-meta">
+            <span id="startProgress">Mapa 1 desbloqueado</span>
+            <span id="startCoins">0 monedas</span>
+          </div>
+          <button id="startBtn" class="start-button" type="button">JUGAR</button>
+        </div>
+      </section>
 
       <section id="resultModal" class="modal hidden" aria-modal="true" role="dialog">
         <div class="modal-card">
@@ -71,6 +87,7 @@
           <div class="modal-actions vertical">
             <button id="resumeBtn" class="primary" type="button">Continuar</button>
             <button id="restartBtn" class="secondary" type="button">Reiniciar mapa</button>
+            <button id="homeBtn" class="secondary" type="button">Pantalla de inicio</button>
           </div>
         </div>
       </section>
