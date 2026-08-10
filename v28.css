@@ -1,0 +1,25 @@
+/* RBTwar v28 — controles de audio separados */
+#musicBtn{position:relative;overflow:hidden}
+#musicBtn.music-on{border-color:#B8DBFF!important;background:linear-gradient(180deg,#FFFFFF,#EEF7FF)!important}
+#musicBtn.music-off{opacity:.68;filter:saturate(.55)}
+#musicBtn.music-off::after{
+  content:"";
+  position:absolute;
+  width:3px;
+  height:28px;
+  border-radius:3px;
+  background:#FF5A6B;
+  transform:rotate(-42deg);
+  box-shadow:0 0 0 1px rgba(255,255,255,.7);
+}
+#musicBtn.music-on::before{
+  content:"";
+  position:absolute;
+  inset:4px;
+  border-radius:10px;
+  border:1px solid rgba(58,134,255,.10);
+  pointer-events:none;
+}
+@media(max-height:430px) and (orientation:landscape){
+  #musicBtn.music-off::after{height:24px}
+}
