@@ -98,7 +98,7 @@ function nextSpawn`;
       'producción y ayuda recompensada'
     );
 
-    const labels = `function updateLabels(){if(!game)return;ui.worldLabel.textContent=\`${displayZone(game.level)} · Nivel ${game.level}\`;ui.levelProgressText.textContent=\`Nivel ${game.level} · ${game.title}\`;ui.prevLevelBtn.disabled=game.level<=1;ui.nextUnlockedBtn.disabled=game.level>=save.unlockedLevel;}`;
+    const labels = `function updateLabels(){if(!game)return;ui.worldLabel.textContent=displayZone(game.level)+' · Nivel '+game.level;ui.levelProgressText.textContent='Nivel '+game.level+' · '+game.title;ui.prevLevelBtn.disabled=game.level<=1;ui.nextUnlockedBtn.disabled=game.level>=save.unlockedLevel;}`;
     corrected = replaceOne(
       corrected,
       /function updateLabels\(\)\{[\s\S]*?\}\nfunction refreshHud/,
@@ -109,10 +109,10 @@ function nextSpawn`;
     const startScreen = `function refreshStartScreen(){
  if(!ui.levelPath)return;
  const current=Math.max(1,save.currentLevel),meta=levelConfig(current),types=unlockedTypes(current).map(t=>UNITS[t].name).join(' · ');
- ui.startProgress.textContent=\`Nivel máximo ${save.unlockedLevel}\`;
- ui.startCoins.textContent=\`${save.coins} monedas\`;
- ui.selectedLevelInfo.textContent=\`Nivel ${current} · ${meta.title} · ${displayZone(current)} · ${meta.mission}\`;
- ui.startBtn.textContent=\`JUGAR NIVEL ${current}\`;
+ ui.startProgress.textContent='Nivel máximo '+save.unlockedLevel;
+ ui.startCoins.textContent=save.coins+' monedas';
+ ui.selectedLevelInfo.textContent='Nivel '+current+' · '+meta.title+' · '+displayZone(current)+' · '+meta.mission;
+ ui.startBtn.textContent='JUGAR NIVEL '+current;
  ui.levelPath.innerHTML='';
  let levels=[];
  if(save.unlockedLevel<=60){
@@ -183,7 +183,7 @@ function rewardProductionBoost(seconds=60){
 }
 function rewardDoubleCoins(){
  if(!game||!ended||ui.resultEyebrow.textContent!=='VICTORIA'||game.rewardDoubled||!game.lastReward)return false;
- save.coins+=game.lastReward;game.rewardDoubled=true;persist();ui.rewardCoins.textContent=\`+${game.lastReward*2} 🪙\`;showToast('Recompensa duplicada.');
+ save.coins+=game.lastReward;game.rewardDoubled=true;persist();ui.rewardCoins.textContent='+'+(game.lastReward*2)+' 🪙';showToast('Recompensa duplicada.');
  window.dispatchEvent(new CustomEvent('rbtwar:reward-used',{detail:{kind:'doubleCoins'}}));return true;
 }
 window.RBTwarRewards={
