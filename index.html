@@ -11,6 +11,7 @@
   <title>RBTwar</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="menu-v8.css" />
+  <link rel="stylesheet" href="v10.css" />
 </head>
 <body>
   <div id="app">
@@ -25,6 +26,7 @@
       <div class="hud">
         <div class="hud-chip" aria-label="Monedas"><span>🪙</span><b id="coinCount">0</b></div>
         <div class="hud-chip" aria-label="Estrellas"><span>⭐</span><b id="starCount">0</b></div>
+        <button id="soundBtn" class="icon-btn" type="button" aria-label="Silenciar sonido">🔊</button>
         <button id="pauseBtn" class="icon-btn" type="button" aria-label="Pausar">Ⅱ</button>
       </div>
     </header>
@@ -153,7 +155,9 @@
     <span>RBTwar se juega en horizontal.</span>
   </div>
 
-  <script src="src/loader-v9-safe.js" defer></script>
+  <script src="src/patch-v10.js" defer></script>
+  <script src="src/loader-v10.js" defer></script>
   <script src="src/menu-v8.js" defer></script>
+  <script src="src/audio-v10.js" defer></script>
 </body>
 </html>

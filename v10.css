@@ -1,0 +1,6 @@
+/* RBTwar v10 visual tweaks */
+#soundBtn.sound-off { opacity: .5; filter: grayscale(1); }
+#soundBtn { font-size: 15px; }
+@media (max-width: 700px) and (orientation: landscape) {
+  #soundBtn { width: 36px; }
+}
