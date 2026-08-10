@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#EAF6FF" />
+  <title>RBTwar Admin</title>
+  <link rel="icon" href="favicon.svg?v=30" type="image/svg+xml" />
+  <link rel="stylesheet" href="admin.css?v=30" />
+</head>
+<body>
+  <div class="admin-shell">
+    <header class="admin-header">
+      <div class="admin-brand">
+        <span class="admin-logo">R</span>
+        <div><strong>RBTwar Admin</strong><small>Analítica y progreso</small></div>
+      </div>
+      <div class="admin-actions">
+        <span id="sourceBadge" class="source-badge local">LOCAL</span>
+        <button id="refreshBtn" type="button">↻ Actualizar</button>
+        <button id="exportBtn" type="button">Exportar JSON</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="connection-card">
+        <div>
+          <strong>Fuente de datos</strong>
+          <p id="connectionText">Mostrando los datos de prueba guardados en este dispositivo.</p>
+        </div>
+        <button id="connectionBtn" type="button">Conectar backend</button>
+      </section>
+
+      <section class="metric-grid" aria-label="Indicadores principales">
+        <article><span>Instalaciones</span><strong id="metricInstalls">1</strong><small>jugadores anónimos</small></article>
+        <article><span>Sesiones</span><strong id="metricSessions">0</strong><small id="metricSessionAvg">0 min promedio</small></article>
+        <article><span>Partidas</span><strong id="metricStarts">0</strong><small id="metricWinRate">0% victorias</small></article>
+        <article><span>Nivel máximo</span><strong id="metricMaxLevel">1</strong><small>progreso alcanzado</small></article>
+        <article><span>Mejoras</span><strong id="metricUpgrades">0</strong><small>compradas</small></article>
+        <article><span>Anuncios</span><strong id="metricAds">0</strong><small id="metricAdRate">0% completados</small></article>
+      </section>
+
+      <section class="dashboard-grid">
+        <article class="panel wide">
+          <div class="panel-head"><div><small>PROGRESIÓN</small><h2>Hasta dónde llegan</h2></div><span id="funnelHint">Datos locales</span></div>
+          <div id="levelFunnel" class="funnel empty">Juega algunos niveles para generar datos.</div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head"><div><small>RESULTADOS</small><h2>Partidas</h2></div></div>
+          <div class="donut-wrap">
+            <div id="resultDonut" class="donut" style="--value:0"><span id="donutValue">0%</span></div>
+            <div class="legend">
+              <span><i class="win"></i>Victorias <b id="legendWins">0</b></span>
+              <span><i class="fail"></i>Derrotas <b id="legendFails">0</b></span>
+              <span><i class="exit"></i>Abandonos <b id="legendExits">0</b></span>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head"><div><small>MONETIZACIÓN</small><h2>Anuncios recompensados</h2></div></div>
+          <div id="adsSummary" class="mini-bars empty">Todavía no hay eventos de anuncios.</div>
+        </article>
+
+        <article class="panel wide">
+          <div class="panel-head"><div><small>DIFICULTAD</small><h2>Rendimiento por nivel</h2></div><span>para detectar bloqueos</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Nivel</th><th>Inicios</th><th>Victorias</th><th>Derrotas</th><th>Abandonos</th><th>Éxito</th><th>Tiempo</th></tr></thead>
+              <tbody id="levelTable"><tr><td colspan="7" class="empty-cell">Sin partidas registradas.</td></tr></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel wide">
+          <div class="panel-head"><div><small>ACTIVIDAD</small><h2>Eventos recientes</h2></div><span id="eventCount">0 eventos</span></div>
+          <div id="recentEvents" class="event-list empty">No hay eventos todavía.</div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="connectionDialog">
+    <form method="dialog" class="dialog-card">
+      <div class="dialog-head"><div><small>BACKEND</small><h2>Conectar RBTwar Admin</h2></div><button value="cancel" aria-label="Cerrar">×</button></div>
+      <label>URL del endpoint administrador<input id="adminEndpoint" type="url" placeholder="https://.../functions/v1/rbtwar-admin" /></label>
+      <label>Token de administrador<input id="adminToken" type="password" autocomplete="off" placeholder="JWT de Supabase Auth" /></label>
+      <p>El token se guarda solo durante esta pestaña. Si no hay backend configurado, el panel funciona en modo local para pruebas.</p>
+      <div class="dialog-actions"><button value="cancel" class="secondary">Cancelar</button><button id="saveConnectionBtn" value="default">Conectar</button></div>
+    </form>
+  </dialog>
+
+  <script src="src/admin-v30.js?v=30" defer></script>
+</body>
+</html>
