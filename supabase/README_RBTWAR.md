@@ -1,6 +1,6 @@
 # Backend de analítica RBTwar
 
-Este bloque conecta `src/analytics-v29.js` con Supabase y alimenta `admin.html`.
+Este bloque conecta `src/analytics-v34.js` con Supabase y alimenta `admin.html`.
 
 ## Componentes
 
@@ -27,4 +27,4 @@ El endpoint de administrador exige JWT válido de Supabase Auth y además verifi
 
 ## Métricas disponibles
 
-Instalaciones anónimas, sesiones, tiempo activo promedio, nivel máximo, partidas iniciadas, victorias, derrotas, abandonos, mejoras, embudo por nivel, tasa de éxito y duración por nivel, ofertas de anuncios, anuncios iniciados/completados y recompensas entregadas.
+Instalaciones anónimas, sesiones, tiempo activo promedio, nivel máximo, partidas iniciadas, victorias, derrotas, abandonos, mejoras, selección de ciclos, perfil de dificultad, disponibilidad de ayudas, embudo por nivel, tasa de éxito y duración por nivel, ofertas de anuncios, anuncios iniciados/completados y recompensas entregadas.
