@@ -52,30 +52,59 @@
       <section id="startScreen" class="start-screen" aria-modal="true" role="dialog">
         <div class="start-card">
           <div class="start-hero">
-            <div class="start-logo">R</div>
+            <div class="start-logo-wrap">
+              <div class="start-logo">R</div>
+              <span class="logo-glow"></span>
+            </div>
             <div class="start-copy">
-              <small>ESTRATEGIA DE ROBOTS · 30 NIVELES</small>
+              <small>ESTRATEGIA TÁCTICA DE ROBOTS</small>
               <h1>RBTwar</h1>
-              <p>Conquista fábricas, desbloquea nuevas unidades y avanza por seis zonas de batalla.</p>
+              <p>Conquista fábricas, mejora tu ejército y domina 30 niveles en seis zonas de batalla.</p>
             </div>
             <div class="start-meta">
-              <span id="startProgress">1 de 30 niveles desbloqueados</span>
-              <span id="startCoins">0 monedas</span>
+              <span class="meta-chip"><b id="startProgress">1 de 30</b><small>NIVELES</small></span>
+              <span class="meta-chip coin"><b id="startCoins">0 monedas</b><small>ARSENAL</small></span>
             </div>
           </div>
 
-          <div class="level-map">
-            <div class="level-map-head">
-              <div>
-                <small>CAMINO DE BATALLA</small>
-                <strong id="selectedLevelInfo">Nivel 1 · Tres caminos</strong>
+          <nav class="start-tabs" aria-label="Menú principal">
+            <button id="campaignTab" class="start-tab active" type="button">⚔ CAMPAÑA</button>
+            <button id="upgradesTab" class="start-tab" type="button">⬆ MEJORAS</button>
+          </nav>
+
+          <section id="campaignPanel" class="start-panel campaign-panel">
+            <div class="level-map">
+              <div class="level-map-head">
+                <div>
+                  <small>CAMINO DE BATALLA</small>
+                  <strong id="selectedLevelInfo">Nivel 1 · Tres caminos</strong>
+                </div>
+                <span>Arrastra el camino para explorar</span>
               </div>
-              <span>Toca un nivel desbloqueado</span>
+              <div id="levelPath" class="level-path" aria-label="Selección de 30 niveles"></div>
             </div>
-            <div id="levelPath" class="level-path" aria-label="Selección de 30 niveles"></div>
-          </div>
 
-          <button id="startBtn" class="start-button" type="button">JUGAR NIVEL 1</button>
+            <div class="campaign-footer">
+              <div class="campaign-summary">
+                <div class="zone-badge"><small>ZONA</small><strong id="campaignZone">Desierto Inicial</strong></div>
+                <div class="army-badge"><small>UNIDADES</small><strong id="campaignUnits">Básico</strong></div>
+                <div class="campaign-progress"><span><i id="campaignProgressFill"></i></span><small>PROGRESO TOTAL</small></div>
+              </div>
+              <button id="startBtn" class="start-button" type="button">JUGAR NIVEL 1</button>
+            </div>
+          </section>
+
+          <section id="upgradesPanel" class="start-panel upgrades-panel hidden">
+            <div class="upgrade-head">
+              <div>
+                <small>TALLER DEL EJÉRCITO</small>
+                <strong>Mejora cada tipo de robot</strong>
+              </div>
+              <div class="upgrade-wallet">🪙 <b id="upgradeCoins">0</b></div>
+            </div>
+            <div id="upgradeGrid" class="upgrade-grid" aria-label="Mejoras de unidades"></div>
+            <div id="upgradeStatus" class="upgrade-status">Cada nivel mejora vida, daño, movimiento y velocidad de producción.</div>
+          </section>
         </div>
       </section>
 
@@ -101,7 +130,7 @@
           <div class="modal-actions vertical">
             <button id="resumeBtn" class="primary" type="button">Continuar</button>
             <button id="restartBtn" class="secondary" type="button">Reiniciar nivel</button>
-            <button id="homeBtn" class="secondary" type="button">Camino de niveles</button>
+            <button id="homeBtn" class="secondary" type="button">Menú principal</button>
           </div>
         </div>
       </section>
@@ -123,6 +152,7 @@
     <span>RBTwar se juega en horizontal.</span>
   </div>
 
-  <script src="src/loader-v7.js" defer></script>
+  <script src="src/loader-v8.js" defer></script>
+  <script src="src/menu-v8.js" defer></script>
 </body>
 </html>
