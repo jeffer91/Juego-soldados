@@ -13,6 +13,7 @@
     pauseModal: document.getElementById('pauseModal'),
     resumeBtn: document.getElementById('resumeBtn'),
     restartBtn: document.getElementById('restartBtn'),
+    homeBtn: document.getElementById('homeBtn'),
     tutorial: document.getElementById('tutorial'),
     tutorialClose: document.getElementById('tutorialClose'),
     selectionPanel: document.getElementById('selectionPanel'),
@@ -20,6 +21,10 @@
     selectedSquadType: document.getElementById('selectedSquadType'),
     cancelSelection: document.getElementById('cancelSelection'),
     toast: document.getElementById('toast'),
+    startScreen: document.getElementById('startScreen'),
+    startBtn: document.getElementById('startBtn'),
+    startProgress: document.getElementById('startProgress'),
+    startCoins: document.getElementById('startCoins'),
     resultModal: document.getElementById('resultModal'),
     resultEyebrow: document.getElementById('resultEyebrow'),
     resultTitle: document.getElementById('resultTitle'),
@@ -32,7 +37,7 @@
     nextUnlockedBtn: document.getElementById('nextUnlockedBtn')
   };
 
-  const STORAGE_KEY = 'rbtwar-save-v2';
+  const STORAGE_KEY = 'rbtwar-save-v3';
   const TEAM = Object.freeze({ PLAYER: 'player', ENEMY: 'enemy', NEUTRAL: 'neutral' });
   const TEAM_COLOR = Object.freeze({ player: '#39aaf7', enemy: '#f25656', neutral: '#c9c0aa' });
 
@@ -41,12 +46,13 @@
   });
 
   const BIOMES = Object.freeze({
-    desert: { name: 'Desierto', ground: '#b99b63', ground2: '#9c7f4d', road: '#735c3e', obstacle: '#5f513f', accent: '#d7bc7b' },
-    forest: { name: 'Bosque', ground: '#698856', ground2: '#537044', road: '#6e5b43', obstacle: '#315537', accent: '#91b86c' },
-    snow: { name: 'Nieve', ground: '#cbdcdf', ground2: '#a9c1c6', road: '#75898e', obstacle: '#60767c', accent: '#edf7f8' },
-    city: { name: 'Ciudad', ground: '#747b84', ground2: '#5d646d', road: '#343b43', obstacle: '#444b53', accent: '#a8afb8' }
+    desert: { name: 'Desierto', ground: '#b99b63', ground2: '#9c7f4d', road: '#735c3e', obstacle: '#5f513f' },
+    forest: { name: 'Bosque', ground: '#698856', ground2: '#537044', road: '#6e5b43', obstacle: '#315537' },
+    snow: { name: 'Nieve', ground: '#cbdcdf', ground2: '#a9c1c6', road: '#75898e', obstacle: '#60767c' },
+    city: { name: 'Ciudad', ground: '#747b84', ground2: '#5d646d', road: '#343b43', obstacle: '#444b53' }
   });
 
+  // Cada número final es la cola inicial de robots. Salen de la base UNO POR UNO.
   const LEVELS = Object.freeze({
     1: {
       biome: 'desert',
@@ -96,6 +102,7 @@
 
   let save = loadSave();
   let game = null;
+  let inMenu = true;
   let paused = false;
   let ended = false;
   let selectedSquadId = null;
@@ -105,12 +112,12 @@
   let view = { w: 844, h: 390, dpr: 1 };
 
   function loadSave() {
-    try {
-      const rawV2 = localStorage.getItem(STORAGE_KEY);
-      if (rawV2) return normalizeSave(JSON.parse(rawV2));
-      const old = localStorage.getItem('rbtwar-save-v1');
-      if (old) return normalizeSave(JSON.parse(old));
-    } catch (_) {}
+    for (const key of [STORAGE_KEY, 'rbtwar-save-v2', 'rbtwar-save-v1']) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (raw) return normalizeSave(JSON.parse(raw));
+      } catch (_) {}
+    }
     return defaultSave();
   }
 
@@ -128,6 +135,7 @@
   function persist() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(save));
     refreshHud();
+    refreshStartScreen();
   }
 
   function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
@@ -170,12 +178,15 @@
   }
 
   function nodeFromData(data, index) {
-    const [id, nx, ny, team, kind, stock] = data;
+    const [id, nx, ny, team, kind, initialQueue] = data;
     const hpBase = kind === 'hq' ? 720 : 420;
     return {
       id, index, nx, ny, x: 0, y: 0, team, kind,
-      unitType: 'basic', stock,
+      unitType: 'basic',
+      spawnQueue: initialQueue,
+      spawnCooldown: 0.25 + index * 0.06,
       productionTimer: 0,
+      rallySerial: 0,
       captureTeam: null,
       captureProgress: 0,
       maxHp: hpBase,
@@ -197,13 +208,14 @@
   function proceduralLevel(level) {
     const rand = mulberry32(2026 + level * 7919);
     const shift = () => (rand() - .5) * .055;
+    const q = Math.min(5, 2 + Math.floor(level / 5));
     const nodes = [
       ['P-HQ', .07, .52, TEAM.PLAYER, 'hq', 5],
       ['N-A', .25 + shift(), .24 + shift(), TEAM.NEUTRAL, 'factory', 0],
       ['N-B', .31 + shift(), .76 + shift(), TEAM.NEUTRAL, 'factory', 0],
       ['N-C', .49 + shift(), .48 + shift(), TEAM.NEUTRAL, 'factory', 0],
-      ['E-A', .68 + shift(), .70 + shift(), TEAM.ENEMY, 'factory', Math.min(5, 2 + Math.floor(level / 5))],
-      ['E-B', .75 + shift(), .25 + shift(), TEAM.ENEMY, 'factory', Math.min(5, 2 + Math.floor(level / 5))],
+      ['E-A', .68 + shift(), .70 + shift(), TEAM.ENEMY, 'factory', q],
+      ['E-B', .75 + shift(), .25 + shift(), TEAM.ENEMY, 'factory', q],
       ['E-HQ', .93, .50, TEAM.ENEMY, 'hq', 5]
     ];
     const obstacles = Array.from({ length: 7 }, () => ({
@@ -237,12 +249,14 @@
       nodes: layout.nodes,
       edges: layout.edges,
       obstacles: layout.obstacles,
+      individuals: [],
       squads: [],
       projectiles: [],
       particles: [],
       elapsed: 0,
       aiThink: .8,
-      idCounter: 1
+      idCounter: 1,
+      individualIdCounter: 1
     };
   }
 
@@ -260,6 +274,7 @@
     view = { w, h, dpr };
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     positionNodes();
+    repositionWaitingIndividuals();
   }
 
   function scale() {
@@ -278,19 +293,68 @@
     }
   }
 
+  function rallyPoint(node, slot = 0) {
+    const s = scale();
+    const direction = node.x < view.w * .5 ? 1 : -1;
+    const row = slot % 5;
+    const col = Math.floor((slot % 10) / 5);
+    return {
+      x: node.x + direction * (39 + col * 15) * s,
+      y: node.y + (row - 2) * 10 * s
+    };
+  }
+
+  function repositionWaitingIndividuals() {
+    if (!game) return;
+    const grouped = new Map();
+    for (const unit of game.individuals) {
+      const key = `${unit.homeNode}:${unit.team}`;
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key).push(unit);
+    }
+    for (const units of grouped.values()) {
+      units.forEach((unit, i) => {
+        const node = game.nodes[unit.homeNode];
+        const target = rallyPoint(node, i);
+        unit.targetX = target.x;
+        unit.targetY = target.y;
+        if (unit.state === 'waiting') {
+          unit.x = target.x;
+          unit.y = target.y;
+        }
+      });
+    }
+  }
+
   function startLevel(level) {
+    inMenu = false;
     save.currentLevel = clamp(level, 1, save.unlockedLevel);
     selectedSquadId = null;
     ended = false;
     paused = false;
     game = createLevel(save.currentLevel);
     resizeCanvas();
+    ui.startScreen.classList.add('hidden');
     ui.pauseModal.classList.add('hidden');
     ui.resultModal.classList.add('hidden');
     ui.selectionPanel.classList.add('hidden');
+    if (!save.tutorialSeen) ui.tutorial.classList.remove('hidden');
     updateLabels();
     persist();
-    showToast(`Mapa ${game.level}: destruye el CORE rojo.`);
+    lastTs = performance.now();
+    showToast(`Mapa ${game.level}: tus robots saldrán de las bases uno por uno.`);
+  }
+
+  function showStartScreen() {
+    inMenu = true;
+    paused = false;
+    selectedSquadId = null;
+    ui.pauseModal.classList.add('hidden');
+    ui.resultModal.classList.add('hidden');
+    ui.selectionPanel.classList.add('hidden');
+    ui.tutorial.classList.add('hidden');
+    ui.startScreen.classList.remove('hidden');
+    refreshStartScreen();
   }
 
   function updateLabels() {
@@ -305,6 +369,14 @@
     ui.coinCount.textContent = String(save.coins);
     ui.starCount.textContent = String(totalStars());
     if (game) updateLabels();
+  }
+
+  function refreshStartScreen() {
+    ui.startProgress.textContent = save.unlockedLevel === 1
+      ? 'Mapa 1 desbloqueado'
+      : `${save.unlockedLevel} mapas desbloqueados`;
+    ui.startCoins.textContent = `${save.coins} monedas`;
+    ui.startBtn.textContent = save.currentLevel > 1 ? `CONTINUAR · MAPA ${save.currentLevel}` : 'JUGAR';
   }
 
   function neighbors(index) {
@@ -356,20 +428,70 @@
     return best;
   }
 
-  function createSquad(node, team = node.team) {
-    if (node.team !== team || node.stock <= 0) return null;
-    const count = Math.min(5, node.stock);
-    node.stock -= count;
+  function waitingIndividuals(nodeIndex, team) {
+    return game.individuals.filter(u => u.homeNode === nodeIndex && u.team === team && u.state === 'waiting');
+  }
+
+  function spawnIndividual(node) {
+    if (node.team === TEAM.NEUTRAL || node.hp <= 0) return;
+    const stats = unitStats(node.team, game.level);
+    const unitsAtNode = game.individuals.filter(u => u.homeNode === node.index && u.team === node.team).length;
+    const target = rallyPoint(node, unitsAtNode);
+    game.individuals.push({
+      id: game.individualIdCounter++,
+      team: node.team,
+      type: node.unitType,
+      level: stats.level,
+      homeNode: node.index,
+      x: node.x,
+      y: node.y,
+      targetX: target.x,
+      targetY: target.y,
+      speed: 52,
+      state: 'exiting'
+    });
+    spawnBurst(node.x, node.y, TEAM_COLOR[node.team], 4);
+  }
+
+  function formSquadFromIndividuals(node, team, maxCount = 5) {
+    const available = waitingIndividuals(node.index, team).slice(0, maxCount);
+    if (!available.length) return null;
     const stats = unitStats(team, game.level);
+    const count = available.length;
+    const ids = new Set(available.map(u => u.id));
+    const x = available.reduce((sum, u) => sum + u.x, 0) / count;
+    const y = available.reduce((sum, u) => sum + u.y, 0) / count;
+    game.individuals = game.individuals.filter(u => !ids.has(u.id));
     const squad = {
       id: game.idCounter++, team, type: node.unitType, level: stats.level, count,
       unitHp: stats.hp, hp: stats.hp * count, maxHp: stats.hp * count,
       damage: stats.damage, speed: stats.speed, fireRate: stats.fireRate, range: stats.range,
-      x: node.x, y: node.y, currentNode: node.index, path: [], targetNode: null,
+      x, y, currentNode: node.index, path: [], targetNode: null,
       fireTimer: 0, combatTargetId: null, selected: false
     };
     game.squads.push(squad);
+    repositionWaitingIndividuals();
     return squad;
+  }
+
+  function autoFormFullSquads() {
+    for (const node of game.nodes) {
+      for (const team of [TEAM.PLAYER, TEAM.ENEMY]) {
+        while (waitingIndividuals(node.index, team).length >= 5) {
+          formSquadFromIndividuals(node, team, 5);
+        }
+      }
+    }
+  }
+
+  function promoteThreatenedIndividuals() {
+    for (const node of game.nodes) {
+      if (node.team === TEAM.NEUTRAL) continue;
+      const enemyClose = game.squads.some(s => s.hp > 0 && s.team !== node.team && distance(s, node) <= 90 * scale());
+      if (!enemyClose) continue;
+      const available = waitingIndividuals(node.index, node.team);
+      if (available.length) formSquadFromIndividuals(node, node.team, Math.min(5, available.length));
+    }
   }
 
   function getSquad(id) { return game.squads.find(s => s.id === id); }
@@ -405,9 +527,12 @@
   }
 
   function update(dt) {
-    if (!game || paused || ended) return;
+    if (!game || inMenu || paused || ended) return;
     game.elapsed += dt;
     updateProduction(dt);
+    updateIndividuals(dt);
+    autoFormFullSquads();
+    promoteThreatenedIndividuals();
     updateAI(dt);
     updateMovement(dt);
     updateCombat(dt);
@@ -421,15 +546,43 @@
   function updateProduction(dt) {
     for (const node of game.nodes) {
       if (node.team === TEAM.NEUTRAL || node.hp <= 0) continue;
+
+      if (node.spawnQueue > 0) {
+        node.spawnCooldown -= dt;
+        if (node.spawnCooldown <= 0) {
+          spawnIndividual(node);
+          node.spawnQueue -= 1;
+          node.spawnCooldown = .48;
+        }
+        continue;
+      }
+
       node.productionTimer += dt;
       const baseInterval = UNIT_TYPES[node.unitType].production;
       const enemyBoost = node.team === TEAM.ENEMY ? Math.max(.76, 1 - (game.level - 1) * .018) : 1;
       const interval = baseInterval * enemyBoost;
-      if (node.productionTimer >= interval && node.stock < 15) {
+      if (node.productionTimer >= interval) {
         node.productionTimer -= interval;
-        node.stock += 1;
+        spawnIndividual(node);
       }
-      if (node.stock >= 5) createSquad(node, node.team);
+    }
+  }
+
+  function updateIndividuals(dt) {
+    for (const unit of game.individuals) {
+      if (unit.state !== 'exiting') continue;
+      const dx = unit.targetX - unit.x;
+      const dy = unit.targetY - unit.y;
+      const d = Math.hypot(dx, dy);
+      const step = unit.speed * dt;
+      if (d <= step + 1) {
+        unit.x = unit.targetX;
+        unit.y = unit.targetY;
+        unit.state = 'waiting';
+      } else {
+        unit.x += dx / d * step;
+        unit.y += dy / d * step;
+      }
     }
   }
 
@@ -561,12 +714,13 @@
       node.captureProgress += dt;
       if (node.captureProgress >= 2.6) {
         node.team = team;
-        node.stock = 0;
+        node.spawnQueue = 0;
+        node.spawnCooldown = .35;
         node.productionTimer = 0;
         node.captureProgress = 0;
         node.captureTeam = null;
-        spawnBurst(node.x, node.y, TEAM_COLOR[team]);
-        if (team === TEAM.PLAYER) showToast('Base conquistada. Ahora produce robots azules.');
+        spawnBurst(node.x, node.y, TEAM_COLOR[team], 10);
+        if (team === TEAM.PLAYER) showToast('Base conquistada. Sus próximos robots saldrán uno por uno para ti.');
       }
     }
   }
@@ -668,8 +822,8 @@
     game.projectiles.push({ x1: from.x, y1: from.y, x2: to.x, y2: to.y, life: .10, maxLife: .10, color: TEAM_COLOR[team] });
   }
 
-  function spawnBurst(x, y, color) {
-    for (let i = 0; i < 10; i++) {
+  function spawnBurst(x, y, color, count = 10) {
+    for (let i = 0; i < count; i++) {
       const a = Math.random() * Math.PI * 2;
       const speed = 18 + Math.random() * 44;
       game.particles.push({ x, y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, life: .35 + Math.random() * .25, maxLife: .60, color });
@@ -683,6 +837,7 @@
     drawRoads();
     drawObstacles();
     drawBases();
+    drawIndividuals();
     drawSquads();
     drawEffects();
   }
@@ -742,6 +897,10 @@
     }
   }
 
+  function readyCount(node) {
+    return game.individuals.filter(u => u.homeNode === node.index && u.team === node.team).length;
+  }
+
   function drawBases() {
     const s = scale();
     for (const node of game.nodes) {
@@ -779,12 +938,13 @@
         const w = r * 1.48;
         ctx.fillStyle = 'rgba(0,0,0,.38)'; ctx.fillRect(-w/2, r*.82, w, 4*s);
         ctx.fillStyle = color; ctx.fillRect(-w/2, r*.82, w * clamp(node.hp/node.maxHp,0,1), 4*s);
-      } else {
+      } else if (node.team !== TEAM.NEUTRAL) {
+        const count = readyCount(node);
         ctx.fillStyle = 'rgba(0,0,0,.47)';
-        ctx.beginPath(); ctx.roundRect(-16*s, r*.76, 32*s, 16*s, 7*s); ctx.fill();
+        ctx.beginPath(); ctx.roundRect(-19*s, r*.76, 38*s, 16*s, 7*s); ctx.fill();
         ctx.fillStyle = '#fff';
-        ctx.font = `800 ${10*s}px system-ui`;
-        ctx.fillText(String(node.stock), 0, r*1.02);
+        ctx.font = `800 ${9*s}px system-ui`;
+        ctx.fillText(`${Math.min(count,5)}/5`, 0, r*1.02);
       }
       if (node.captureTeam) {
         const p = clamp(node.captureProgress / 2.6, 0, 1);
@@ -795,6 +955,25 @@
         ctx.stroke();
       }
       ctx.restore();
+    }
+  }
+
+  function drawRobot(x, y, color, size) {
+    ctx.fillStyle = 'rgba(0,0,0,.22)';
+    ctx.beginPath(); ctx.ellipse(x + 1.5*size, y + 4.5*size, 6.2*size, 3.2*size, 0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#263746';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.8 * size;
+    ctx.beginPath(); ctx.roundRect(x-5.5*size, y-6*size, 11*size, 12*size, 2.4*size); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x-2.2*size, y-1*size, 1.2*size, 0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+2.2*size, y-1*size, 1.2*size, 0,Math.PI*2); ctx.fill();
+  }
+
+  function drawIndividuals() {
+    const s = scale();
+    for (const unit of game.individuals) {
+      drawRobot(unit.x, unit.y, TEAM_COLOR[unit.team], .82 * s);
     }
   }
 
@@ -813,7 +992,6 @@
     const s = scale();
     for (const squad of game.squads) {
       const color = TEAM_COLOR[squad.team];
-      const r = 9.5 * s;
       const offsets = formationOffsets(squad.count, 15 * s);
       if (squad.selected) {
         ctx.strokeStyle = '#fff';
@@ -822,17 +1000,7 @@
         ctx.beginPath(); ctx.arc(squad.x, squad.y, 26*s, 0, Math.PI*2); ctx.stroke();
         ctx.setLineDash([]);
       }
-      for (const [ox, oy] of offsets) {
-        ctx.fillStyle = 'rgba(0,0,0,.25)';
-        ctx.beginPath(); ctx.ellipse(squad.x+ox+2*s, squad.y+oy+5*s, r*.9, r*.46, 0,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#263746';
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2.2 * s;
-        ctx.beginPath(); ctx.roundRect(squad.x+ox-r*.67, squad.y+oy-r*.70, r*1.34, r*1.40, 3*s); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = color;
-        ctx.beginPath(); ctx.arc(squad.x+ox-r*.23, squad.y+oy-r*.06, 1.5*s, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(squad.x+ox+r*.23, squad.y+oy-r*.06, 1.5*s, 0, Math.PI*2); ctx.fill();
-      }
+      for (const [ox, oy] of offsets) drawRobot(squad.x + ox, squad.y + oy, color, s);
       const hpRatio = clamp(squad.hp / Math.max(1, squad.maxHp), 0, 1);
       if (hpRatio < .99) {
         const w = 32 * s;
@@ -864,11 +1032,12 @@
   }
 
   function handleCanvasTap(e) {
-    if (!game || paused || ended) return;
+    if (!game || inMenu || paused || ended) return;
     e.preventDefault();
     const p = getPointerPosition(e);
     pointer = p;
     const s = scale();
+
     const squad = game.squads
       .filter(q => q.team === TEAM.PLAYER && q.hp > 0)
       .map(q => ({ q, d: distance(p, q) }))
@@ -877,23 +1046,32 @@
       selectSquad(squad.q);
       return;
     }
+
     const nodeHit = game.nodes
       .map(node => ({ node, d: distance(p, node) }))
       .sort((a,b) => a.d - b.d)[0];
-    if (nodeHit && nodeHit.d <= 48 * s) {
+
+    if (nodeHit && nodeHit.d <= 50 * s) {
       if (selectedSquadId) {
         sendSquad(getSquad(selectedSquadId), nodeHit.node.index);
         return;
       }
-      if (nodeHit.node.team === TEAM.PLAYER && nodeHit.node.stock > 0) {
-        const newSquad = createSquad(nodeHit.node, TEAM.PLAYER);
-        if (newSquad) {
-          selectSquad(newSquad);
-          showToast(`Pelotón de ${newSquad.count}. Toca la base objetivo.`);
+
+      if (nodeHit.node.team === TEAM.PLAYER) {
+        const available = waitingIndividuals(nodeHit.node.index, TEAM.PLAYER);
+        if (available.length) {
+          const newSquad = formSquadFromIndividuals(nodeHit.node, TEAM.PLAYER, Math.min(5, available.length));
+          if (newSquad) {
+            selectSquad(newSquad);
+            showToast(`Pelotón de ${newSquad.count}. Toca una base objetivo.`);
+          }
+          return;
         }
+        showToast('Todavía están saliendo robots de esta base.');
         return;
       }
     }
+
     deselectSquad();
   }
 
@@ -918,6 +1096,7 @@
   canvas.addEventListener('pointerup', handleCanvasTap);
   canvas.addEventListener('contextmenu', e => e.preventDefault());
 
+  ui.startBtn.addEventListener('click', () => startLevel(save.currentLevel));
   ui.cancelSelection.addEventListener('click', deselectSquad);
   ui.tutorialClose.addEventListener('click', () => {
     ui.tutorial.classList.add('hidden');
@@ -925,7 +1104,7 @@
     persist();
   });
   ui.pauseBtn.addEventListener('click', () => {
-    if (ended) return;
+    if (inMenu || ended) return;
     paused = true;
     ui.pauseModal.classList.remove('hidden');
   });
@@ -935,6 +1114,7 @@
     lastTs = performance.now();
   });
   ui.restartBtn.addEventListener('click', () => startLevel(game.level));
+  ui.homeBtn.addEventListener('click', showStartScreen);
   ui.replayBtn.addEventListener('click', () => startLevel(game.level));
   ui.nextBtn.addEventListener('click', () => startLevel(Math.min(save.unlockedLevel, game.level + 1)));
   ui.prevLevelBtn.addEventListener('click', () => startLevel(game.level - 1));
@@ -942,10 +1122,10 @@
   window.addEventListener('resize', resizeCanvas, { passive: true });
   window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 120), { passive: true });
 
-  if (save.tutorialSeen) ui.tutorial.classList.add('hidden');
   game = createLevel(save.currentLevel);
   resizeCanvas();
   refreshHud();
-  startLevel(save.currentLevel);
+  refreshStartScreen();
+  showStartScreen();
   requestAnimationFrame(loop);
 })();
