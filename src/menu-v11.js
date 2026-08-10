@@ -20,16 +20,13 @@
     if (!grid) return;
     for (const [type, copy] of Object.entries(info)) {
       const card = grid.querySelector(`.unit-${type}`);
-      if (!card) continue;
-      let role = card.querySelector('.strategy-role');
-      if (!role) {
-        role = document.createElement('div');
-        role.className = 'strategy-role';
-        const action = card.querySelector('.upgrade-buy');
-        if (action) card.insertBefore(role, action);
-        else card.appendChild(role);
-      }
+      if (!card || card.querySelector('.strategy-role')) continue;
+      const role = document.createElement('div');
+      role.className = 'strategy-role';
       role.innerHTML = `<small>${copy.title}</small><strong>${copy.text}</strong><span>${copy.strong}</span>`;
+      const action = card.querySelector('.upgrade-buy');
+      if (action) card.insertBefore(role, action);
+      else card.appendChild(role);
     }
   }
 
@@ -56,9 +53,7 @@
   window.addEventListener('rbtwar:ready', refresh);
   window.addEventListener('rbtwar:state', refresh);
 
-  if (grid) {
-    new MutationObserver(refresh).observe(grid, { childList: true, subtree: true });
-  }
+  if (grid) new MutationObserver(refresh).observe(grid, { childList: true, subtree: true });
 
   refresh();
 })();
