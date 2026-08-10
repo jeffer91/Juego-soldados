@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="description" content="RBTwar - estrategia ligera de robots por pelotones para celular." />
-  <link rel="icon" href="favicon.svg?v=17" type="image/svg+xml" />
+  <link rel="icon" href="favicon.svg?v=18" type="image/svg+xml" />
   <title>RBTwar</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="menu-v8.css" />
@@ -16,8 +16,8 @@
   <link rel="stylesheet" href="v11.css" />
   <link rel="stylesheet" href="v12.css" />
   <link rel="stylesheet" href="v13.css" />
-  <link rel="stylesheet" href="v14.css?v=17" />
-  <link rel="stylesheet" href="v17.css?v=17" />
+  <link rel="stylesheet" href="v14.css?v=18" />
+  <link rel="stylesheet" href="v17.css?v=18" />
 </head>
 <body data-biome="desert">
   <div id="app">
@@ -138,14 +138,16 @@
     <span>RBTwar se juega en horizontal.</span>
   </div>
 
-  <script src="src/patch-v10.js" defer></script>
-  <script src="src/patch-v11.js" defer></script>
-  <script src="src/patch-v12.js" defer></script>
-  <script src="src/patch-v13.js" defer></script>
-  <script src="src/patch-v14.js?v=17" defer></script>
-  <script src="src/loader-v14.js?v=17" defer></script>
-  <script src="src/menu-v8.js?v=17" defer></script>
-  <script src="src/audio-v10.js" defer></script>
-  <script src="src/ui-v14.js?v=17" defer></script>
+  <!-- Motor estable: vuelve a la cadena v12 que ya funcionaba antes del bootstrap v14. -->
+  <script src="src/patch-v10.js?v=18" defer></script>
+  <script src="src/patch-v11.js?v=18" defer></script>
+  <script src="src/patch-v12.js?v=18" defer></script>
+  <script src="src/loader-v12.js?v=18" defer></script>
+
+  <!-- Interfaz y audio. No interceptan el botón JUGAR. -->
+  <script src="src/menu-v8.js?v=18" defer></script>
+  <script src="src/menu-v12.js?v=18" defer></script>
+  <script src="src/audio-v10.js?v=18" defer></script>
+  <script src="src/ui-v14.js?v=18" defer></script>
 </body>
 </html>
