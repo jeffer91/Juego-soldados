@@ -1,0 +1,176 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #07101a;
+  color: #eef5ff;
+  --panel: rgba(9, 19, 31, 0.92);
+  --line: rgba(255, 255, 255, 0.12);
+  --blue: #4cb9ff;
+  --red: #ff6b6b;
+  --gold: #ffc857;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; min-height: 100%; background: #07101a; }
+body { min-height: 100dvh; overflow: hidden; }
+button { font: inherit; }
+
+#app {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(55, 130, 190, .16), transparent 32%),
+    #07101a;
+}
+
+.topbar, .bottombar {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px max(14px, env(safe-area-inset-left));
+  background: rgba(6, 14, 24, .96);
+  border-bottom: 1px solid var(--line);
+  z-index: 10;
+}
+
+.bottombar {
+  min-height: 58px;
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+}
+
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark {
+  width: 38px; height: 38px; border-radius: 11px;
+  display: grid; place-items: center;
+  font-weight: 900; font-size: 20px;
+  color: #08131f; background: linear-gradient(145deg, #75d4ff, #2f9cff);
+  box-shadow: 0 5px 18px rgba(44, 154, 255, .25);
+}
+.brand strong { display: block; font-size: 17px; letter-spacing: .5px; }
+.brand small, .level-progress small { display: block; color: #8da5bb; margin-top: 2px; font-size: 11px; }
+
+.hud { display: flex; align-items: center; gap: 8px; }
+.hud-chip, .icon-btn, .bottombar button {
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.055);
+  color: #eef5ff;
+  border-radius: 12px;
+}
+.hud-chip { display: flex; align-items: center; gap: 6px; padding: 8px 11px; min-width: 70px; justify-content: center; }
+.icon-btn { width: 40px; height: 40px; cursor: pointer; }
+
+.game-shell { position: relative; min-height: 0; overflow: hidden; }
+#gameCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  background: #bca06a;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.tutorial {
+  position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+  width: min(520px, calc(100% - 28px));
+  padding: 12px 14px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 16px;
+  background: rgba(8, 17, 29, .92);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 15px 45px rgba(0,0,0,.25);
+  display: flex; align-items: center; gap: 12px;
+  font-size: 12px; z-index: 6;
+}
+.tutorial strong { color: #72cfff; white-space: nowrap; }
+.tutorial span { color: #c8d6e5; }
+.tutorial button { margin-left: auto; border: 0; border-radius: 10px; padding: 8px 11px; background: #2f9cff; color: #fff; cursor: pointer; }
+
+.selection-panel {
+  position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 18px;
+  width: min(520px, calc(100% - 28px));
+  padding: 11px 13px;
+  border-radius: 16px;
+  background: rgba(7, 18, 30, .94);
+  border: 1px solid rgba(76,185,255,.45);
+  box-shadow: 0 12px 40px rgba(0,0,0,.3);
+  z-index: 5;
+}
+.selection-panel div { flex: 1; }
+.selection-panel small { display:block; color:#79cfff; font-size:10px; letter-spacing:1px; }
+.selection-panel strong { font-size:15px; }
+.selection-panel span { color:#aabdd0; font-size:12px; }
+.selection-panel button { border:1px solid var(--line); background:transparent; color:#dce9f6; border-radius:10px; padding:8px 10px; cursor:pointer; }
+.hidden { display: none !important; }
+
+.toast {
+  position: absolute; top: 18px; right: 18px;
+  max-width: min(330px, calc(100% - 36px));
+  background: rgba(8,18,30,.92);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #d8e6f3;
+  transform: translateY(-10px);
+  opacity: 0;
+  transition: .2s ease;
+  pointer-events: none;
+  z-index: 7;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+.modal {
+  position:absolute; inset:0; z-index:20;
+  display:grid; place-items:center;
+  padding:20px;
+  background:rgba(1,6,12,.65);
+  backdrop-filter:blur(8px);
+}
+.modal-card {
+  width:min(430px,100%);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:24px;
+  padding:24px;
+  background:linear-gradient(180deg, rgba(17,35,54,.98), rgba(7,16,27,.98));
+  box-shadow:0 24px 80px rgba(0,0,0,.42);
+  text-align:center;
+}
+.modal-card.compact { width:min(360px,100%); }
+.modal-card > small { color:#77cfff; letter-spacing:2px; font-weight:800; }
+.modal-card h1, .modal-card h2 { margin:8px 0; }
+.modal-card p { color:#a9bdd0; line-height:1.45; }
+.result-stars { font-size:38px; letter-spacing:5px; margin:14px 0; min-height:48px; }
+.reward { display:flex; justify-content:space-between; gap:12px; padding:13px 14px; background:rgba(255,255,255,.05); border:1px solid var(--line); border-radius:14px; margin:16px 0; }
+.reward span { color:#91a7bb; }
+.reward strong { color:#ffd26f; }
+.modal-actions { display:grid; grid-template-columns:1fr 1.4fr; gap:10px; }
+.modal-actions.vertical { grid-template-columns:1fr; }
+.modal-actions button { border:0; border-radius:13px; padding:12px 14px; font-weight:800; cursor:pointer; }
+.primary { background:linear-gradient(135deg,#2e9fff,#58c8ff); color:#06111b; }
+.secondary { background:rgba(255,255,255,.08); color:#eaf4fd; border:1px solid var(--line) !important; }
+
+.bottombar button { padding:9px 13px; cursor:pointer; }
+.bottombar button:disabled { opacity:.35; cursor:not-allowed; }
+.level-progress { text-align:center; }
+.level-progress strong { font-size:14px; }
+
+@media (max-width: 720px) {
+  .topbar { min-height: 56px; padding-top: max(8px, env(safe-area-inset-top)); }
+  .brand small { display:none; }
+  .hud-chip { min-width:58px; padding:7px 8px; font-size:12px; }
+  .tutorial { top:10px; display:grid; grid-template-columns:1fr auto; gap:4px 8px; }
+  .tutorial strong { grid-column:1; }
+  .tutorial span { grid-column:1; }
+  .tutorial button { grid-column:2; grid-row:1 / span 4; align-self:center; }
+  .selection-panel { bottom:10px; gap:10px; }
+  .selection-panel span { display:none; }
+  .bottombar { min-height:52px; }
+  .bottombar button { font-size:12px; }
+}
