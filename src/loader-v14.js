@@ -10,9 +10,8 @@
     }
   };
 
-  // Cargamos v9 directamente y reconstruimos la cadena de parches.
-  // Esto evita la cadena loader-v14 -> v10 -> v9 y, sobre todo,
-  // fuerza una copia fresca de game-v7 para no reutilizar el rev=9 cacheado.
+  // Bootstrap directo: evita loaders encadenados y obliga a leer una copia fresca
+  // del motor base. El error visto en consola venía del game-v7 antiguo cacheado.
   fetch('src/loader-v9.js?rev=15', { cache: 'no-store' })
     .then(response => {
       if (!response.ok) throw new Error(`No se pudo cargar el motor base (${response.status})`);
@@ -30,16 +29,15 @@
       if (!code.includes(anchor)) throw new Error('No se encontró el punto de extensión del motor');
 
       const patches = [
-        '      corrected = window.RBTwarV10Patch(corrected, replaceOne);',
-        '      corrected = window.RBTwarV11Patch(corrected, replaceOne);',
-        '      corrected = window.RBTwarV12Patch(corrected, replaceOne);',
-        '      corrected = window.RBTwarV13Patch(corrected, replaceOne);',
-        '      corrected = window.RBTwarV14Patch(corrected, replaceOne);',
+        "      try{corrected=window.RBTwarV10Patch(corrected,replaceOne);}catch(e){console.warn('RBTwar v10 omitido',e);}",
+        "      try{corrected=window.RBTwarV11Patch(corrected,replaceOne);}catch(e){console.warn('RBTwar v11 omitido',e);}",
+        "      try{corrected=window.RBTwarV12Patch(corrected,replaceOne);}catch(e){console.warn('RBTwar v12 omitido',e);}",
+        "      try{corrected=window.RBTwarV13Patch(corrected,replaceOne);}catch(e){console.warn('RBTwar v13 omitido',e);}",
+        "      try{corrected=window.RBTwarV14Patch(corrected,replaceOne);}catch(e){console.warn('RBTwar v14 omitido',e);}",
         ''
       ].join('\n');
 
       code = code.replace(anchor, patches + anchor);
-
       const script = document.createElement('script');
       script.dataset.rbtwarEngine = 'v14-fixed';
       script.textContent = code;
