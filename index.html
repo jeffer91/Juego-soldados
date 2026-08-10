@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1320" />
+  <meta name="description" content="RBTwar - estrategia ligera de robots por pelotones." />
+  <title>RBTwar</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">R</span>
+        <div>
+          <strong>RBTwar</strong>
+          <small id="worldLabel">Desierto · Mapa 1</small>
+        </div>
+      </div>
+      <div class="hud">
+        <div class="hud-chip"><span>🪙</span><b id="coinCount">0</b></div>
+        <div class="hud-chip"><span>⭐</span><b id="starCount">0</b></div>
+        <button id="pauseBtn" class="icon-btn" type="button" aria-label="Pausar">Ⅱ</button>
+      </div>
+    </header>
+
+    <main class="game-shell">
+      <canvas id="gameCanvas" width="1280" height="720" aria-label="Campo de batalla de RBTwar"></canvas>
+
+      <div id="tutorial" class="tutorial">
+        <strong>Cómo jugar</strong>
+        <span>1. Toca un pelotón azul.</span>
+        <span>2. Toca una base para darle la orden.</span>
+        <span>3. Destruye el núcleo rojo.</span>
+        <button id="tutorialClose" type="button">Entendido</button>
+      </div>
+
+      <div id="selectionPanel" class="selection-panel hidden">
+        <div>
+          <small>PELOTÓN</small>
+          <strong id="selectedSquadLabel">5 robots</strong>
+        </div>
+        <span id="selectedSquadType">Básico Nv. 1</span>
+        <button id="cancelSelection" type="button">Cancelar</button>
+      </div>
+
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+      <section id="resultModal" class="modal hidden" aria-modal="true" role="dialog">
+        <div class="modal-card">
+          <small id="resultEyebrow">VICTORIA</small>
+          <h1 id="resultTitle">Mapa completado</h1>
+          <div id="resultStars" class="result-stars">⭐</div>
+          <p id="resultMessage"></p>
+          <div class="reward"><span>Recompensa</span><strong id="rewardCoins">+0 🪙</strong></div>
+          <div class="modal-actions">
+            <button id="replayBtn" class="secondary" type="button">Repetir</button>
+            <button id="nextBtn" class="primary" type="button">Siguiente mapa</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="pauseModal" class="modal hidden" aria-modal="true" role="dialog">
+        <div class="modal-card compact">
+          <small>PAUSA</small>
+          <h2>RBTwar</h2>
+          <p>La batalla está detenida.</p>
+          <div class="modal-actions vertical">
+            <button id="resumeBtn" class="primary" type="button">Continuar</button>
+            <button id="restartBtn" class="secondary" type="button">Reiniciar mapa</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bottombar">
+      <button id="prevLevelBtn" type="button">← Anterior</button>
+      <div class="level-progress">
+        <small>PROGRESO</small>
+        <strong id="levelProgressText">Mapa 1</strong>
+      </div>
+      <button id="nextUnlockedBtn" type="button">Siguiente →</button>
+    </footer>
+  </div>
+
+  <script src="src/game.js" defer></script>
+</body>
+</html>
