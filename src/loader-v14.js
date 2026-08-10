@@ -1,83 +1,144 @@
 (() => {
   'use strict';
 
-  const BOOT_VERSION = '17';
-  const showLoadError = (error) => {
-    console.error(error);
+  const VERSION = '18';
+  const ENGINE_URL = `src/game-v7.js?v=${VERSION}`;
+
+  function showError(error) {
+    console.error('RBTwar v18 no pudo iniciar:', error);
     const toast = document.getElementById('toast');
+    const btn = document.getElementById('startBtn');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'ERROR';
+    }
     if (toast) {
-      toast.textContent = 'No se pudo iniciar el juego. Recarga la página.';
+      toast.textContent = 'Error al iniciar el juego. Revisa la consola.';
       toast.classList.add('show');
     }
-  };
+  }
 
-  console.info(`RBTwar bootstrap v${BOOT_VERSION}`);
+  function replaceRequired(source, from, to, label) {
+    if (!source.includes(from)) throw new Error(`No se encontró: ${label}`);
+    return source.replace(from, to);
+  }
 
-  fetch(`src/loader-v9.js?rev=${BOOT_VERSION}`, { cache: 'no-store' })
+  console.info('RBTwar bootstrap v18');
+
+  fetch(ENGINE_URL, { cache: 'no-store' })
     .then(response => {
-      if (!response.ok) throw new Error(`No se pudo cargar el motor base (${response.status})`);
+      if (!response.ok) throw new Error(`Motor base HTTP ${response.status}`);
       return response.text();
     })
     .then(source => {
-      let code = source;
+      let code = source.replace(/\r\n?/g, '\n');
 
-      // 1) Forzar siempre una copia fresca del motor base.
-      code = code.replace(
-        /fetch\('src\/game-v7\.js\?rev=9'\)/,
-        `fetch('src/game-v7.js?rev=${BOOT_VERSION}', { cache: 'no-store' })`
+      // El motor v7 tenía tres ternarios escritos accidentalmente como optional chaining.
+      code = replaceRequired(
+        code,
+        'enemyHp:early?.60+(level-1)*.085:1+Math.min(.55,(level-6)*.026)',
+        'enemyHp:early ? .60+(level-1)*.085 : 1+Math.min(.55,(level-6)*.026)',
+        'enemyHp'
+      );
+      code = replaceRequired(
+        code,
+        'enemyDamage:early?.56+(level-1)*.085:1+Math.min(.48,(level-6)*.022)',
+        'enemyDamage:early ? .56+(level-1)*.085 : 1+Math.min(.48,(level-6)*.022)',
+        'enemyDamage'
+      );
+      code = replaceRequired(
+        code,
+        "mult=targetType==='node'?.34:.46",
+        "mult=targetType==='node' ? .34 : .46",
+        'daño a estructuras'
       );
 
-      // 2) El loader v9 antiguo detenía TODO el juego si una mejora de texto no coincidía.
-      //    Sustituimos el bloque completo por una versión tolerante. Así una mejora opcional
-      //    puede omitirse sin impedir que aparezca el mapa ni que funcione JUGAR.
-      const brittleHelpers = /const fail = \(message\) => \{[\s\S]*?\};\s*const replaceOne = \(source, pattern, replacement, label\) => \{[\s\S]*?return next;\s*\};/;
-      const safeHelpers = `const fail = (message) => { console.warn(\`RBTwar v9: \${message}\`); };
-  const replaceOne = (source, pattern, replacement, label) => {
-    let next = source;
-    try { next = source.replace(pattern, replacement); }
-    catch (error) { console.warn(\`RBTwar v9: se omitió \${label}\`, error); return source; }
-    if (next === source) console.warn(\`RBTwar v9: se omitió \${label}\`);
-    return next;
-  };`;
-      if (!brittleHelpers.test(code)) throw new Error('No se encontró el bloque de compatibilidad del loader v9');
-      code = code.replace(brittleHelpers, safeHelpers);
+      // Mantener los guardados anteriores y usar una clave estable nueva.
+      code = code.replace(
+        "const STORAGE_KEY='rbtwar-save-v7',MAX_LEVEL=30;",
+        "const STORAGE_KEY='rbtwar-save-v18',MAX_LEVEL=30;"
+      );
+      code = code.replace(
+        "for(const key of [STORAGE_KEY,'rbtwar-save-v6'",
+        "for(const key of [STORAGE_KEY,'rbtwar-save-v12','rbtwar-save-v11','rbtwar-save-v10','rbtwar-save-v9','rbtwar-save-v8','rbtwar-save-v7','rbtwar-save-v6'"
+      );
 
-      // 3) Normalizar saltos de línea antes de ejecutar las expresiones regulares heredadas.
-      //    Evita que \r\n / \n hagan fallar reemplazos como "plantillas de mapas".
-      const sourceStart = ".then(source => {\n      let corrected = source";
-      if (code.includes(sourceStart)) {
-        code = code.replace(
-          sourceStart,
-          ".then(source => {\n      source = source.replace(/\\r\\n?/g, '\\n');\n      let corrected = source"
-        );
-      } else {
-        console.warn('RBTwar: no se encontró el punto de normalización de líneas');
+      // El botón siempre se llama JUGAR.
+      code = code.replace(
+        'ui.startBtn.textContent=`JUGAR NIVEL ${save.currentLevel}`;',
+        "ui.startBtn.textContent='JUGAR';"
+      );
+
+      // Emitir estado después de guardar para que menú y taller se actualicen.
+      code = replaceRequired(
+        code,
+        "function persist(){localStorage.setItem(STORAGE_KEY,JSON.stringify(save));refreshHud();refreshStartScreen();}",
+        "function persist(){localStorage.setItem(STORAGE_KEY,JSON.stringify(save));refreshHud();refreshStartScreen();queueMicrotask(()=>window.dispatchEvent(new CustomEvent('rbtwar:state',{detail:window.RBTwarAPI?.getState?.()})));}",
+        'persistencia'
+      );
+
+      // API única para el menú, mejoras y futuras integraciones. Sin loaders encadenados.
+      const apiBlock = `
+function rbtwarUpgradeCost(type,level){
+ const base={basic:50,fast:65,heavy:80,sniper:90}[type]||50;
+ return Math.round(base*Math.pow(1.72,Math.max(0,level-1)));
+}
+function rbtwarCatalog(){
+ return UNIT_ORDER.map(type=>{
+  const u=UNITS[type],level=Math.max(1,Number(save.unitLevels[type]||1));
+  return{type,name:u.name,short:u.short,unlock:u.unlock,unlocked:save.unlockedLevel>=u.unlock,level,maxLevel:5,cost:level>=5?0:rbtwarUpgradeCost(type,level),hp:u.hp,damage:u.damage,range:u.range,speed:u.speed,production:u.production};
+ });
+}
+function rbtwarState(){
+ const level=Math.max(1,Number(save.currentLevel||1));
+ return{coins:Number(save.coins||0),stars:totalStars(),currentLevel:level,unlockedLevel:Number(save.unlockedLevel||1),catalog:rbtwarCatalog(),levelMeta:{title:TITLES[level-1]||('Nivel '+level),biome:biomeKey(level)}};
+}
+function rbtwarUpgrade(type){
+ if(!UNIT_ORDER.includes(type))return{ok:false,reason:'type'};
+ const u=UNITS[type],level=Math.max(1,Number(save.unitLevels[type]||1));
+ if(save.unlockedLevel<u.unlock)return{ok:false,reason:'locked',unlock:u.unlock};
+ if(level>=5)return{ok:false,reason:'max',level};
+ const cost=rbtwarUpgradeCost(type,level);
+ if(save.coins<cost)return{ok:false,reason:'coins',cost};
+ save.coins-=cost;save.unitLevels[type]=level+1;persist();
+ return{ok:true,level:level+1,cost};
+}
+window.RBTwarAPI={
+ getState:rbtwarState,
+ getCatalog:rbtwarCatalog,
+ upgradeUnit:rbtwarUpgrade,
+ startLevel:(level)=>{startLevel(clamp(Number(level||save.currentLevel)||1,1,save.unlockedLevel));return true;},
+ showHome:()=>{showStart();return true;},
+ restartLevel:()=>{if(!game)return false;startLevel(game.level);return true;}
+};
+`;
+
+      code = replaceRequired(
+        code,
+        "canvas.addEventListener('pointerdown',onDown);",
+        apiBlock + "\ncanvas.addEventListener('pointerdown',onDown);",
+        'punto de API'
+      );
+
+      // Avisar a la interfaz solo después de que el motor haya terminado de inicializarse.
+      code = replaceRequired(
+        code,
+        "game=makeLevel(save.currentLevel);resizeCanvas();refreshHud();refreshStartScreen();showStart();requestAnimationFrame(loop);",
+        "game=makeLevel(save.currentLevel);resizeCanvas();refreshHud();refreshStartScreen();showStart();requestAnimationFrame(loop);queueMicrotask(()=>{window.dispatchEvent(new CustomEvent('rbtwar:ready',{detail:window.RBTwarAPI.getState()}));window.dispatchEvent(new CustomEvent('rbtwar:state',{detail:window.RBTwarAPI.getState()}));console.info('RBTwar motor v18 listo');});",
+        'inicio final'
+      );
+
+      // Validar sintaxis ANTES de ejecutar el motor. Si falla, veremos el error real aquí.
+      try {
+        new Function(code);
+      } catch (syntaxError) {
+        throw new Error(`Sintaxis del motor consolidado: ${syntaxError.message}`);
       }
 
-      // 4) Correcciones de sintaxis heredadas del generador v9.
-      code = code
-        .replace('playerProduction:world===4?.94:1,', 'playerProduction:world===4 ? .94 : 1,')
-        .replace('enemyHp:early?.58+(level-1)*.085:1+Math.min(.50,(level-6)*.024)+(boss?.08:0),', 'enemyHp:early ? .58+(level-1)*.085 : 1+Math.min(.50,(level-6)*.024)+(boss ? .08 : 0),')
-        .replace('enemyDamage:early?.54+(level-1)*.08:1+Math.min(.44,(level-6)*.020)+(boss?.06:0),', 'enemyDamage:early ? .54+(level-1)*.08 : 1+Math.min(.44,(level-6)*.020)+(boss ? .06 : 0),')
-        .replace('movement:worldMove,captureTime:early?2.35:2.55+(boss?.25:0),rewardMultiplier:boss?1.30:1,difficulty:p};', 'movement:worldMove,captureTime:early ? 2.35 : 2.55+(boss ? .25 : 0),rewardMultiplier:boss ? 1.30 : 1,difficulty:p};');
-
-      // 5) Aplicar mejoras posteriores sin dejar que una versión opcional tumbe el motor.
-      const anchor = '      const apiSource = `';
-      if (!code.includes(anchor)) throw new Error('No se encontró el punto de extensión del motor');
-      const patches = [
-        "      try{corrected=window.RBTwarV10Patch(corrected,replaceOne);}catch(e){console.warn('RBTwar v10 omitido',e);}",
-        "      try{corrected=window.RBTwarV11Patch(corrected,replaceOne);}catch(e){console.warn('RBTwar v11 omitido',e);}",
-        "      try{corrected=window.RBTwarV12Patch(corrected,replaceOne);}catch(e){console.warn('RBTwar v12 omitido',e);}",
-        "      try{corrected=window.RBTwarV13Patch(corrected,replaceOne);}catch(e){console.warn('RBTwar v13 omitido',e);}",
-        "      try{corrected=window.RBTwarV14Patch(corrected,replaceOne);}catch(e){console.warn('RBTwar v14 omitido',e);}",
-        ''
-      ].join('\n');
-      code = code.replace(anchor, patches + anchor);
-
       const script = document.createElement('script');
-      script.dataset.rbtwarEngine = `v14-fixed-${BOOT_VERSION}`;
+      script.dataset.rbtwarEngine = 'v18-stable';
       script.textContent = code;
       document.head.appendChild(script);
     })
-    .catch(showLoadError);
+    .catch(showError);
 })();
