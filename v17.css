@@ -1,0 +1,12 @@
+/* RBTwar v17 — estabilidad visual final */
+html,body,#app,.game-shell{overflow:hidden!important}
+.start-screen{overflow:hidden!important}
+.start-card{overflow:hidden!important}
+.start-button:disabled{
+  opacity:.58!important;
+  cursor:default!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+body.menu-open .bottombar{display:none!important}
+body.menu-open #pauseBtn{display:none!important}
