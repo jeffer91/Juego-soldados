@@ -18,7 +18,7 @@
         <span class="brand-mark">R</span>
         <div class="brand-copy">
           <strong>RBTwar</strong>
-          <small id="worldLabel">Desierto · Mapa 1</small>
+          <small id="worldLabel">Desierto · Nivel 1</small>
         </div>
       </div>
       <div class="hud">
@@ -54,12 +54,12 @@
           <div class="start-hero">
             <div class="start-logo">R</div>
             <div class="start-copy">
-              <small>ESTRATEGIA DE ROBOTS</small>
+              <small>ESTRATEGIA DE ROBOTS · 30 NIVELES</small>
               <h1>RBTwar</h1>
-              <p>Conquista bases, reúne pelotones y avanza por un camino de niveles infinito.</p>
+              <p>Conquista fábricas, desbloquea nuevas unidades y avanza por seis zonas de batalla.</p>
             </div>
             <div class="start-meta">
-              <span id="startProgress">Mapa 1 desbloqueado</span>
+              <span id="startProgress">1 de 30 niveles desbloqueados</span>
               <span id="startCoins">0 monedas</span>
             </div>
           </div>
@@ -72,7 +72,7 @@
               </div>
               <span>Toca un nivel desbloqueado</span>
             </div>
-            <div id="levelPath" class="level-path" aria-label="Selección de niveles"></div>
+            <div id="levelPath" class="level-path" aria-label="Selección de 30 niveles"></div>
           </div>
 
           <button id="startBtn" class="start-button" type="button">JUGAR NIVEL 1</button>
@@ -82,7 +82,7 @@
       <section id="resultModal" class="modal hidden" aria-modal="true" role="dialog">
         <div class="modal-card">
           <small id="resultEyebrow">VICTORIA</small>
-          <h1 id="resultTitle">Mapa completado</h1>
+          <h1 id="resultTitle">Nivel completado</h1>
           <div id="resultStars" class="result-stars">⭐</div>
           <p id="resultMessage"></p>
           <div class="reward"><span>Recompensa</span><strong id="rewardCoins">+0 🪙</strong></div>
@@ -100,7 +100,7 @@
           <p>La batalla está detenida.</p>
           <div class="modal-actions vertical">
             <button id="resumeBtn" class="primary" type="button">Continuar</button>
-            <button id="restartBtn" class="secondary" type="button">Reiniciar mapa</button>
+            <button id="restartBtn" class="secondary" type="button">Reiniciar nivel</button>
             <button id="homeBtn" class="secondary" type="button">Camino de niveles</button>
           </div>
         </div>
@@ -108,12 +108,12 @@
     </main>
 
     <footer class="bottombar">
-      <button id="prevLevelBtn" type="button" aria-label="Mapa anterior">←</button>
+      <button id="prevLevelBtn" type="button" aria-label="Nivel anterior">←</button>
       <div class="level-progress">
         <small>PROGRESO</small>
-        <strong id="levelProgressText">Mapa 1</strong>
+        <strong id="levelProgressText">Nivel 1</strong>
       </div>
-      <button id="nextUnlockedBtn" type="button" aria-label="Siguiente mapa desbloqueado">→</button>
+      <button id="nextUnlockedBtn" type="button" aria-label="Siguiente nivel desbloqueado">→</button>
     </footer>
   </div>
 
@@ -123,6 +123,6 @@
     <span>RBTwar se juega en horizontal.</span>
   </div>
 
-  <script src="src/game-v6.js" defer></script>
+  <script src="src/game-v7.js" defer></script>
 </body>
 </html>
