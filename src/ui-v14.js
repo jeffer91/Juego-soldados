@@ -35,7 +35,10 @@
     const info = $('selectedLevelInfo'); if (info) info.textContent = 'Nivel ' + level + (title ? ' · ' + title : '');
     const zone = $('campaignZone'); if (zone) zone.textContent = biomeNames[biome] || 'Zona';
     const fill = $('campaignProgressFill'); if (fill) fill.style.width = ((((level - 1) % 10) + 1) * 10) + '%';
-    if (startBtn) { startBtn.textContent = 'JUGAR'; startBtn.disabled = !ready; }
+    if (startBtn) {
+      startBtn.textContent = 'JUGAR';
+      startBtn.disabled = !ready;
+    }
   }
 
   function cleanResult(){
@@ -73,19 +76,12 @@
   campaignTab?.addEventListener('click', () => setTab('campaign'));
   upgradesTab?.addEventListener('click', () => setTab('upgrades'));
 
-  startBtn?.addEventListener('click', e => {
-    if (!ready || !window.RBTwarAPI?.startLevel) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      const toast = $('toast');
-      if (toast) { toast.textContent = 'Cargando juego…'; toast.classList.add('show'); }
-      return;
-    }
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    const level = state()?.currentLevel || 1;
-    window.RBTwarAPI.startLevel(level);
-  }, true);
+  // Importante: JUGAR queda en manos del motor principal.
+  // Antes esta capa capturaba el click y podía bloquear el listener real del juego.
+  if (startBtn) {
+    startBtn.textContent = 'JUGAR';
+    startBtn.disabled = true;
+  }
 
   const startScreen = $('startScreen');
   if (startScreen) new MutationObserver(() => {
@@ -102,18 +98,20 @@
   window.addEventListener('rbtwar:ready', () => {
     ready = true;
     document.body.classList.add('menu-open');
-    if (startBtn) startBtn.disabled = false;
+    if (startBtn) {
+      startBtn.disabled = false;
+      startBtn.textContent = 'JUGAR';
+    }
     applyCompactState();
     audit();
+    console.info('RBTwar UI lista');
   });
   window.addEventListener('rbtwar:state', () => requestAnimationFrame(applyCompactState));
 
   if (window.RBTwarAPI?.getState) {
     ready = true;
+    if (startBtn) startBtn.disabled = false;
     applyCompactState();
-  } else if (startBtn) {
-    startBtn.textContent = 'JUGAR';
-    startBtn.disabled = true;
   }
 
   setTab('campaign');
