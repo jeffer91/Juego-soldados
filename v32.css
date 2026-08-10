@@ -1,0 +1,41 @@
+/* RBTwar v32 — indicador de dificultad y ayudas menos invasivas */
+.difficulty-badge{
+  min-width:92px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:1px;
+  padding:7px 10px;
+  border-radius:14px;
+  border:1px solid #D7E6F3;
+  background:#F8FBFE;
+  box-shadow:0 3px 8px rgba(59,100,138,.07);
+}
+.difficulty-badge small{font-size:8px;font-weight:900;letter-spacing:.6px;color:#7A91A7}
+.difficulty-badge strong{font-size:11px;font-weight:950;color:#24445F}
+.difficulty-badge.easy{background:#F0FFF6;border-color:#BFEFD1}
+.difficulty-badge.easy strong{color:#168950}
+.difficulty-badge.medium{background:#F3F8FF;border-color:#C9DFFD}
+.difficulty-badge.medium strong{color:#2775D6}
+.difficulty-badge.hard{background:#FFF5F1;border-color:#FFD0C5}
+.difficulty-badge.hard strong{color:#DD5B42}
+.difficulty-badge.recovery{background:#FFFBEF;border-color:#F3DF99}
+.difficulty-badge.recovery strong{color:#B07A12}
+.difficulty-badge.bastion{background:#FFF1F4;border-color:#FFC2CE;box-shadow:0 4px 12px rgba(224,72,103,.12)}
+.difficulty-badge.bastion strong{color:#D93859}
+
+.assist-button{
+  transition:opacity .18s ease,transform .18s ease,box-shadow .18s ease!important;
+}
+.assist-button:not(.urgent){opacity:.92}
+.assist-button.urgent{animation:rbtwarHelpPulse 1.15s ease-in-out infinite}
+@keyframes rbtwarHelpPulse{
+  0%,100%{transform:scale(1);box-shadow:0 5px 16px rgba(255,91,91,.18)}
+  50%{transform:scale(1.05);box-shadow:0 7px 22px rgba(255,91,91,.30)}
+}
+
+@media (max-width:760px){
+  .difficulty-badge{min-width:78px;padding:6px 8px}
+  .difficulty-badge small{font-size:7px}
+  .difficulty-badge strong{font-size:10px}
+}
