@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="menu-v8.css" />
   <link rel="stylesheet" href="v10.css" />
+  <link rel="stylesheet" href="v11.css" />
 </head>
 <body>
   <div id="app">
@@ -62,7 +63,7 @@
             <div class="start-copy">
               <small>ESTRATEGIA TÁCTICA DE ROBOTS</small>
               <h1>RBTwar</h1>
-              <p>Conquista fábricas, mejora tu ejército y domina 30 niveles en seis zonas de batalla.</p>
+              <p>Conquista fábricas, mejora tu ejército, supera 30 niveles y continúa en el Frente Infinito.</p>
             </div>
             <div class="start-meta">
               <span class="meta-chip"><b id="startProgress">1 de 30</b><small>NIVELES</small></span>
@@ -84,7 +85,7 @@
                 </div>
                 <span>Arrastra el camino para explorar</span>
               </div>
-              <div id="levelPath" class="level-path" aria-label="Selección de 30 niveles"></div>
+              <div id="levelPath" class="level-path" aria-label="Selección de niveles"></div>
             </div>
 
             <div class="campaign-footer">
@@ -106,7 +107,7 @@
               <div class="upgrade-wallet">🪙 <b id="upgradeCoins">0</b></div>
             </div>
             <div id="upgradeGrid" class="upgrade-grid" aria-label="Mejoras de unidades"></div>
-            <div id="upgradeStatus" class="upgrade-status">Cada nivel mejora vida, daño, movimiento y velocidad de producción.</div>
+            <div id="upgradeStatus" class="upgrade-status">Cada clase tiene fortalezas, debilidades y una función táctica distinta.</div>
           </section>
         </div>
       </section>
@@ -156,8 +157,10 @@
   </div>
 
   <script src="src/patch-v10.js" defer></script>
-  <script src="src/loader-v10.js" defer></script>
+  <script src="src/patch-v11.js" defer></script>
+  <script src="src/loader-v11.js" defer></script>
   <script src="src/menu-v8.js" defer></script>
+  <script src="src/menu-v11.js" defer></script>
   <script src="src/audio-v10.js" defer></script>
 </body>
 </html>
