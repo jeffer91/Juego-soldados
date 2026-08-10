@@ -1,0 +1,20 @@
+/* RBTwar v12 — progresión numérica continua */
+.level-gap{
+  flex:0 0 42px;
+  height:60px;
+  display:grid;
+  place-items:center;
+  color:#6f8ba0;
+  font-size:16px;
+  font-weight:900;
+  letter-spacing:3px;
+}
+body.boss-level .level-map{
+  border-color:rgba(255,205,92,.25);
+  box-shadow:inset 0 0 24px rgba(255,190,70,.035);
+}
+body.boss-level .level-node.selected{
+  border-color:#ffd56b;
+  box-shadow:0 0 0 3px rgba(255,205,92,.18),0 0 20px rgba(255,193,69,.22);
+}
+body.boss-level .level-map-head small{color:#ffd56b;}
