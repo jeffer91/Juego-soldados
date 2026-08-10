@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="v10.css" />
   <link rel="stylesheet" href="v11.css" />
   <link rel="stylesheet" href="v12.css" />
+  <link rel="stylesheet" href="v13.css?v=13" />
 </head>
 <body>
   <div id="app">
@@ -37,19 +38,14 @@
       <canvas id="gameCanvas" aria-label="Campo de batalla de RBTwar"></canvas>
 
       <div id="tutorial" class="tutorial hidden">
-        <span><b>1</b> Mantén y arrastra un pelotón azul</span>
-        <span><b>2</b> Suéltalo sobre camino, base o aliado</span>
-        <span><b>3</b> Destruye el castillo CORE rojo</span>
-        <button id="tutorialClose" type="button">Listo</button>
+        <span>☝️ Arrastra tus robots → 🏰 CORE rojo</span>
+        <button id="tutorialClose" type="button">OK</button>
       </div>
 
       <div id="selectionPanel" class="selection-panel hidden">
-        <div>
-          <small>PELOTÓN SELECCIONADO</small>
-          <strong id="selectedSquadLabel">5 robots</strong>
-        </div>
-        <span id="selectedSquadType">Básico Nv. 1</span>
-        <button id="cancelSelection" type="button">Cancelar</button>
+        <div><strong id="selectedSquadLabel">BAS · 5</strong></div>
+        <span id="selectedSquadType">Nv.1</span>
+        <button id="cancelSelection" type="button" aria-label="Cerrar selección">×</button>
       </div>
 
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -61,54 +57,41 @@
               <div class="start-logo">R</div>
               <span class="logo-glow"></span>
             </div>
-            <div class="start-copy">
-              <small>ESTRATEGIA TÁCTICA DE ROBOTS</small>
-              <h1>RBTwar</h1>
-              <p>Conquista fábricas, mejora tu ejército y sigue avanzando nivel tras nivel.</p>
-            </div>
+            <div class="start-copy"><h1>RBTwar</h1></div>
             <div class="start-meta">
-              <span class="meta-chip"><b id="startProgress">Nivel máximo 1</b><small>NIVELES</small></span>
-              <span class="meta-chip coin"><b id="startCoins">0 monedas</b><small>ARSENAL</small></span>
+              <span class="meta-chip"><b id="startProgress">Nivel máximo 1</b><small>🏆 NIVEL</small></span>
+              <span class="meta-chip coin"><b id="startCoins">0 monedas</b><small>🪙 MONEDAS</small></span>
             </div>
           </div>
 
           <nav class="start-tabs" aria-label="Menú principal">
-            <button id="campaignTab" class="start-tab active" type="button">⚔ CAMPAÑA</button>
-            <button id="upgradesTab" class="start-tab" type="button">⬆ MEJORAS</button>
+            <button id="campaignTab" class="start-tab active" type="button">NIVELES</button>
+            <button id="upgradesTab" class="start-tab" type="button">MEJORAS</button>
           </nav>
 
           <section id="campaignPanel" class="start-panel campaign-panel">
             <div class="level-map">
-              <div class="level-map-head">
-                <div>
-                  <small>CAMINO DE BATALLA</small>
-                  <strong id="selectedLevelInfo">Nivel 1 · Tres caminos</strong>
-                </div>
-                <span>Arrastra el camino para explorar</span>
-              </div>
+              <div class="level-map-head"><strong id="selectedLevelInfo">Nivel 1 · Tres caminos</strong></div>
               <div id="levelPath" class="level-path" aria-label="Selección de niveles"></div>
             </div>
 
             <div class="campaign-footer">
               <div class="campaign-summary">
-                <div class="zone-badge"><small>ZONA</small><strong id="campaignZone">Desierto · Nivel 1</strong></div>
-                <div class="army-badge"><small>UNIDADES</small><strong id="campaignUnits">Básico</strong></div>
-                <div class="campaign-progress"><span><i id="campaignProgressFill"></i></span><small>CICLO DE 10 NIVELES</small></div>
+                <div class="zone-badge"><small>ZONA</small><strong id="campaignZone">Desierto</strong></div>
+                <div class="army-badge"><small>UNIDADES</small><strong id="campaignUnits">BAS</strong></div>
+                <div class="campaign-progress"><span><i id="campaignProgressFill"></i></span><small>CICLO</small></div>
               </div>
-              <button id="startBtn" class="start-button" type="button">JUGAR NIVEL 1</button>
+              <button id="startBtn" class="start-button" type="button">JUGAR 1</button>
             </div>
           </section>
 
           <section id="upgradesPanel" class="start-panel upgrades-panel hidden">
             <div class="upgrade-head">
-              <div>
-                <small>TALLER DEL EJÉRCITO</small>
-                <strong>Mejora cada tipo de robot</strong>
-              </div>
+              <strong>MEJORAS</strong>
               <div class="upgrade-wallet">🪙 <b id="upgradeCoins">0</b></div>
             </div>
             <div id="upgradeGrid" class="upgrade-grid" aria-label="Mejoras de unidades"></div>
-            <div id="upgradeStatus" class="upgrade-status">Cada clase tiene fortalezas, debilidades y una función táctica distinta.</div>
+            <div id="upgradeStatus" class="upgrade-status"></div>
           </section>
         </div>
       </section>
@@ -119,35 +102,30 @@
           <h1 id="resultTitle">Nivel completado</h1>
           <div id="resultStars" class="result-stars">⭐</div>
           <p id="resultMessage"></p>
-          <div class="reward"><span>Recompensa</span><strong id="rewardCoins">+0 🪙</strong></div>
+          <div class="reward"><span>🪙</span><strong id="rewardCoins">+0</strong></div>
           <div class="modal-actions">
-            <button id="replayBtn" class="secondary" type="button">Repetir</button>
-            <button id="nextBtn" class="primary" type="button">Siguiente</button>
+            <button id="replayBtn" class="secondary" type="button">↻ Repetir</button>
+            <button id="nextBtn" class="primary" type="button">Siguiente →</button>
           </div>
         </div>
       </section>
 
       <section id="pauseModal" class="modal hidden" aria-modal="true" role="dialog">
         <div class="modal-card compact">
-          <small>PAUSA</small>
-          <h2>RBTwar</h2>
-          <p>La batalla está detenida.</p>
+          <h2>PAUSA</h2>
           <div class="modal-actions vertical">
-            <button id="resumeBtn" class="primary" type="button">Continuar</button>
-            <button id="restartBtn" class="secondary" type="button">Reiniciar nivel</button>
-            <button id="homeBtn" class="secondary" type="button">Menú principal</button>
+            <button id="resumeBtn" class="primary" type="button">▶ Continuar</button>
+            <button id="restartBtn" class="secondary" type="button">↻ Reiniciar</button>
+            <button id="homeBtn" class="secondary" type="button">⌂ Inicio</button>
           </div>
         </div>
       </section>
     </main>
 
     <footer class="bottombar">
-      <button id="prevLevelBtn" type="button" aria-label="Nivel anterior">←</button>
-      <div class="level-progress">
-        <small>PROGRESO</small>
-        <strong id="levelProgressText">Nivel 1</strong>
-      </div>
-      <button id="nextUnlockedBtn" type="button" aria-label="Siguiente nivel desbloqueado">→</button>
+      <button id="prevLevelBtn" type="button" aria-label="Nivel anterior">‹</button>
+      <div class="level-progress"><strong id="levelProgressText">Nivel 1</strong></div>
+      <button id="nextUnlockedBtn" type="button" aria-label="Siguiente nivel desbloqueado">›</button>
     </footer>
   </div>
 
@@ -160,9 +138,10 @@
   <script src="src/patch-v10.js" defer></script>
   <script src="src/patch-v11.js" defer></script>
   <script src="src/patch-v12.js" defer></script>
-  <script src="src/loader-v12.js" defer></script>
-  <script src="src/menu-v8.js" defer></script>
-  <script src="src/menu-v12.js" defer></script>
+  <script src="src/patch-v13.js?v=13" defer></script>
+  <script src="src/loader-v13.js?v=13" defer></script>
+  <script src="src/menu-v8.js?v=13" defer></script>
   <script src="src/audio-v10.js" defer></script>
+  <script src="src/ui-v13.js?v=13" defer></script>
 </body>
 </html>
