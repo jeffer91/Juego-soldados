@@ -37,12 +37,25 @@
     nextUnlockedBtn: document.getElementById('nextUnlockedBtn')
   };
 
-  const STORAGE_KEY = 'rbtwar-save-v3';
+  const STORAGE_KEY = 'rbtwar-save-v4';
   const TEAM = Object.freeze({ PLAYER: 'player', ENEMY: 'enemy', NEUTRAL: 'neutral' });
-  const TEAM_COLOR = Object.freeze({ player: '#39aaf7', enemy: '#f25656', neutral: '#c9c0aa' });
+  const TEAM_COLOR = Object.freeze({
+    player: '#36b8ff',
+    enemy: '#ff5d68',
+    neutral: '#c9c0aa'
+  });
 
   const UNIT_TYPES = Object.freeze({
-    basic: { name: 'Básico', speed: 78, hp: 100, damage: 18, fireRate: 0.72, range: 58, production: 4.3 }
+    basic: {
+      name: 'Básico',
+      speed: 76,
+      hp: 100,
+      damage: 17,
+      fireRate: 0.86,
+      range: 88,
+      production: 5.4,
+      projectileSpeed: 330
+    }
   });
 
   const BIOMES = Object.freeze({
@@ -52,18 +65,25 @@
     city: { name: 'Ciudad', ground: '#747b84', ground2: '#5d646d', road: '#343b43', obstacle: '#444b53' }
   });
 
-  // Cada número final es la cola inicial de robots. Salen de la base UNO POR UNO.
   const LEVELS = Object.freeze({
     1: {
       biome: 'desert',
       title: 'Tres caminos',
+      aiDelay: 11,
+      playerProduction: 0.90,
+      enemyProduction: 1.35,
+      enemyHp: 0.84,
+      enemyDamage: 0.78,
+      initialSpawnInterval: 1.85,
+      playerCoreHp: 900,
+      enemyCoreHp: 570,
       nodes: [
         ['P-HQ', 0.08, 0.50, TEAM.PLAYER, 'hq', 5],
         ['N-A', 0.29, 0.20, TEAM.NEUTRAL, 'factory', 0],
         ['N-B', 0.39, 0.50, TEAM.NEUTRAL, 'factory', 0],
         ['N-C', 0.29, 0.80, TEAM.NEUTRAL, 'factory', 0],
-        ['E-A', 0.68, 0.50, TEAM.ENEMY, 'factory', 2],
-        ['E-HQ', 0.92, 0.50, TEAM.ENEMY, 'hq', 5]
+        ['E-A', 0.68, 0.50, TEAM.ENEMY, 'factory', 0],
+        ['E-HQ', 0.92, 0.50, TEAM.ENEMY, 'hq', 2]
       ],
       edges: [[0,1],[0,2],[0,3],[1,4],[2,4],[3,4],[4,5]],
       obstacles: [
@@ -73,14 +93,22 @@
     2: {
       biome: 'desert',
       title: 'Cruce de fábricas',
+      aiDelay: 6,
+      playerProduction: 1,
+      enemyProduction: 1.02,
+      enemyHp: 1,
+      enemyDamage: 1,
+      initialSpawnInterval: 1.65,
+      playerCoreHp: 820,
+      enemyCoreHp: 760,
       nodes: [
         ['P-HQ', 0.07, 0.52, TEAM.PLAYER, 'hq', 5],
         ['N-A', 0.25, 0.25, TEAM.NEUTRAL, 'factory', 0],
         ['N-B', 0.30, 0.76, TEAM.NEUTRAL, 'factory', 0],
         ['N-C', 0.48, 0.44, TEAM.NEUTRAL, 'factory', 0],
-        ['E-A', 0.64, 0.74, TEAM.ENEMY, 'factory', 3],
-        ['E-B', 0.73, 0.25, TEAM.ENEMY, 'factory', 3],
-        ['E-HQ', 0.93, 0.52, TEAM.ENEMY, 'hq', 5]
+        ['E-A', 0.64, 0.74, TEAM.ENEMY, 'factory', 2],
+        ['E-B', 0.73, 0.25, TEAM.ENEMY, 'factory', 2],
+        ['E-HQ', 0.93, 0.52, TEAM.ENEMY, 'hq', 4]
       ],
       edges: [[0,1],[0,2],[1,3],[2,3],[2,4],[3,4],[3,5],[4,6],[5,6]],
       obstacles: [
@@ -112,7 +140,7 @@
   let view = { w: 844, h: 390, dpr: 1 };
 
   function loadSave() {
-    for (const key of [STORAGE_KEY, 'rbtwar-save-v2', 'rbtwar-save-v1']) {
+    for (const key of [STORAGE_KEY, 'rbtwar-save-v3', 'rbtwar-save-v2', 'rbtwar-save-v1']) {
       try {
         const raw = localStorage.getItem(key);
         if (raw) return normalizeSave(JSON.parse(raw));
@@ -154,6 +182,22 @@
     return Object.values(save.stars).reduce((sum, n) => sum + Number(n || 0), 0);
   }
 
+  function getLevelConfig(level) {
+    if (LEVELS[level]) return LEVELS[level];
+    return {
+      biome: getBiomeKey(level),
+      title: `Operación ${level}`,
+      aiDelay: Math.max(2.5, 5.5 - level * .05),
+      playerProduction: 1,
+      enemyProduction: Math.max(.76, 1 - (level - 2) * .012),
+      enemyHp: 1 + Math.min(.36, (level - 2) * .025),
+      enemyDamage: 1 + Math.min(.32, (level - 2) * .022),
+      initialSpawnInterval: 1.55,
+      playerCoreHp: 820 + level * 18,
+      enemyCoreHp: 760 + level * 26
+    };
+  }
+
   function getBiomeKey(level) {
     if (LEVELS[level]) return LEVELS[level].biome;
     const keys = ['desert', 'forest', 'snow', 'city'];
@@ -162,35 +206,40 @@
 
   function unitStats(team, level) {
     const base = UNIT_TYPES.basic;
+    const cfg = getLevelConfig(level);
     const ownLevel = team === TEAM.PLAYER
       ? Math.max(1, save.unitLevels.basic || 1)
       : Math.max(1, 1 + Math.floor((level - 1) / 3));
-    const factor = 1 + (ownLevel - 1) * 0.12;
-    const mapDifficulty = team === TEAM.ENEMY ? 1 + Math.min(.32, (level - 1) * .035) : 1;
+    const upgrade = 1 + (ownLevel - 1) * 0.12;
+    const teamHp = team === TEAM.ENEMY ? cfg.enemyHp : 1;
+    const teamDamage = team === TEAM.ENEMY ? cfg.enemyDamage : 1;
     return {
       level: ownLevel,
-      hp: base.hp * factor * mapDifficulty,
-      damage: base.damage * factor * mapDifficulty,
+      hp: base.hp * upgrade * teamHp,
+      damage: base.damage * upgrade * teamDamage,
       speed: base.speed * (1 + Math.min(.12, (ownLevel - 1) * .015)),
       fireRate: base.fireRate,
-      range: base.range
+      range: base.range,
+      projectileSpeed: base.projectileSpeed
     };
   }
 
-  function nodeFromData(data, index) {
+  function nodeFromData(data, index, level) {
     const [id, nx, ny, team, kind, initialQueue] = data;
-    const hpBase = kind === 'hq' ? 720 : 420;
+    const cfg = getLevelConfig(level);
+    let maxHp = kind === 'hq' ? 760 : 420;
+    if (kind === 'hq' && team === TEAM.PLAYER) maxHp = cfg.playerCoreHp;
+    if (kind === 'hq' && team === TEAM.ENEMY) maxHp = cfg.enemyCoreHp;
     return {
       id, index, nx, ny, x: 0, y: 0, team, kind,
       unitType: 'basic',
       spawnQueue: initialQueue,
-      spawnCooldown: 0.25 + index * 0.06,
+      spawnCooldown: 0.9 + index * .08,
       productionTimer: 0,
-      rallySerial: 0,
       captureTeam: null,
       captureProgress: 0,
-      maxHp: hpBase,
-      hp: hpBase
+      maxHp,
+      hp: maxHp
     };
   }
 
@@ -199,7 +248,7 @@
     return {
       title: def.title,
       biome: BIOMES[def.biome],
-      nodes: def.nodes.map(nodeFromData),
+      nodes: def.nodes.map((data, i) => nodeFromData(data, i, level)),
       edges: def.edges.map(e => [...e]),
       obstacles: def.obstacles.map(([x,y,r,rot]) => ({ x, y, r, rot }))
     };
@@ -227,7 +276,7 @@
     return {
       title: `Operación ${level}`,
       biome: BIOMES[getBiomeKey(level)],
-      nodes: nodes.map(nodeFromData),
+      nodes: nodes.map((data, i) => nodeFromData(data, i, level)),
       edges: [[0,1],[0,2],[1,3],[2,3],[2,4],[3,4],[3,5],[4,6],[5,6]],
       obstacles
     };
@@ -235,15 +284,9 @@
 
   function createLevel(level) {
     const layout = LEVELS[level] ? explicitLevel(level) : proceduralLevel(level);
-    layout.nodes.forEach(node => {
-      if (node.kind === 'hq') {
-        const bonus = Math.max(0, level - 1) * 24;
-        node.maxHp += bonus;
-        node.hp = node.maxHp;
-      }
-    });
     return {
       level,
+      config: getLevelConfig(level),
       title: layout.title,
       biome: layout.biome,
       nodes: layout.nodes,
@@ -256,7 +299,8 @@
       elapsed: 0,
       aiThink: .8,
       idCounter: 1,
-      individualIdCounter: 1
+      individualIdCounter: 1,
+      projectileIdCounter: 1
     };
   }
 
@@ -299,8 +343,8 @@
     const row = slot % 5;
     const col = Math.floor((slot % 10) / 5);
     return {
-      x: node.x + direction * (39 + col * 15) * s,
-      y: node.y + (row - 2) * 10 * s
+      x: node.x + direction * (45 + col * 16) * s,
+      y: node.y + (row - 2) * 11 * s
     };
   }
 
@@ -342,7 +386,7 @@
     updateLabels();
     persist();
     lastTs = performance.now();
-    showToast(`Mapa ${game.level}: tus robots saldrán de las bases uno por uno.`);
+    showToast(game.level === 1 ? 'Nivel fácil: reúne tu primer pelotón y conquista una base.' : `Mapa ${game.level}: destruye el CORE rojo.`);
   }
 
   function showStartScreen() {
@@ -372,6 +416,7 @@
   }
 
   function refreshStartScreen() {
+    if (!ui.startProgress) return;
     ui.startProgress.textContent = save.unlockedLevel === 1
       ? 'Mapa 1 desbloqueado'
       : `${save.unlockedLevel} mapas desbloqueados`;
@@ -432,10 +477,14 @@
     return game.individuals.filter(u => u.homeNode === nodeIndex && u.team === team && u.state === 'waiting');
   }
 
+  function allIndividualsAtNode(nodeIndex, team) {
+    return game.individuals.filter(u => u.homeNode === nodeIndex && u.team === team);
+  }
+
   function spawnIndividual(node) {
     if (node.team === TEAM.NEUTRAL || node.hp <= 0) return;
     const stats = unitStats(node.team, game.level);
-    const unitsAtNode = game.individuals.filter(u => u.homeNode === node.index && u.team === node.team).length;
+    const unitsAtNode = allIndividualsAtNode(node.index, node.team).length;
     const target = rallyPoint(node, unitsAtNode);
     game.individuals.push({
       id: game.individualIdCounter++,
@@ -444,13 +493,14 @@
       level: stats.level,
       homeNode: node.index,
       x: node.x,
-      y: node.y,
+      y: node.y + 4 * scale(),
       targetX: target.x,
       targetY: target.y,
-      speed: 52,
-      state: 'exiting'
+      speed: 48,
+      state: 'exiting',
+      walkPhase: Math.random() * Math.PI * 2
     });
-    spawnBurst(node.x, node.y, TEAM_COLOR[node.team], 4);
+    spawnBurst(node.x, node.y + 5 * scale(), TEAM_COLOR[node.team], 3);
   }
 
   function formSquadFromIndividuals(node, team, maxCount = 5) {
@@ -465,9 +515,11 @@
     const squad = {
       id: game.idCounter++, team, type: node.unitType, level: stats.level, count,
       unitHp: stats.hp, hp: stats.hp * count, maxHp: stats.hp * count,
-      damage: stats.damage, speed: stats.speed, fireRate: stats.fireRate, range: stats.range,
+      damage: stats.damage, speed: stats.speed, fireRate: stats.fireRate,
+      range: stats.range, projectileSpeed: stats.projectileSpeed,
       x, y, currentNode: node.index, path: [], targetNode: null,
-      fireTimer: 0, combatTargetId: null, selected: false
+      fireTimer: .15, combatTargetId: null, selected: false,
+      bob: Math.random() * Math.PI * 2
     };
     game.squads.push(squad);
     repositionWaitingIndividuals();
@@ -487,7 +539,7 @@
   function promoteThreatenedIndividuals() {
     for (const node of game.nodes) {
       if (node.team === TEAM.NEUTRAL) continue;
-      const enemyClose = game.squads.some(s => s.hp > 0 && s.team !== node.team && distance(s, node) <= 90 * scale());
+      const enemyClose = game.squads.some(s => s.hp > 0 && s.team !== node.team && distance(s, node) <= 105 * scale());
       if (!enemyClose) continue;
       const available = waitingIndividuals(node.index, node.team);
       if (available.length) formSquadFromIndividuals(node, node.team, Math.min(5, available.length));
@@ -495,6 +547,7 @@
   }
 
   function getSquad(id) { return game.squads.find(s => s.id === id); }
+  function getNodeById(id) { return game.nodes.find(n => n.id === id); }
 
   function selectSquad(squad) {
     game.squads.forEach(s => { s.selected = false; });
@@ -526,6 +579,18 @@
     deselectSquad();
   }
 
+  function productionInterval(node) {
+    const base = UNIT_TYPES[node.unitType].production;
+    const mult = node.team === TEAM.ENEMY ? game.config.enemyProduction : game.config.playerProduction;
+    return base * mult;
+  }
+
+  function nextSpawnSeconds(node) {
+    if (node.team === TEAM.NEUTRAL || node.hp <= 0) return null;
+    if (node.spawnQueue > 0) return Math.max(0, node.spawnCooldown);
+    return Math.max(0, productionInterval(node) - node.productionTimer);
+  }
+
   function update(dt) {
     if (!game || inMenu || paused || ended) return;
     game.elapsed += dt;
@@ -536,8 +601,9 @@
     updateAI(dt);
     updateMovement(dt);
     updateCombat(dt);
+    updateProjectiles(dt);
     updateCapture(dt);
-    updateEffects(dt);
+    updateParticles(dt);
     mergeSquads();
     cleanupDead();
     checkDefeat();
@@ -552,15 +618,13 @@
         if (node.spawnCooldown <= 0) {
           spawnIndividual(node);
           node.spawnQueue -= 1;
-          node.spawnCooldown = .48;
+          node.spawnCooldown = game.config.initialSpawnInterval;
         }
         continue;
       }
 
       node.productionTimer += dt;
-      const baseInterval = UNIT_TYPES[node.unitType].production;
-      const enemyBoost = node.team === TEAM.ENEMY ? Math.max(.76, 1 - (game.level - 1) * .018) : 1;
-      const interval = baseInterval * enemyBoost;
+      const interval = productionInterval(node);
       if (node.productionTimer >= interval) {
         node.productionTimer -= interval;
         spawnIndividual(node);
@@ -570,6 +634,7 @@
 
   function updateIndividuals(dt) {
     for (const unit of game.individuals) {
+      unit.walkPhase += dt * 8;
       if (unit.state !== 'exiting') continue;
       const dx = unit.targetX - unit.x;
       const dy = unit.targetY - unit.y;
@@ -587,9 +652,10 @@
   }
 
   function updateAI(dt) {
+    if (game.elapsed < game.config.aiDelay) return;
     game.aiThink -= dt;
     if (game.aiThink > 0) return;
-    game.aiThink = Math.max(1.15, 2.55 - game.level * .035);
+    game.aiThink = Math.max(1.25, 2.65 - game.level * .035);
     const idle = game.squads.filter(s => s.team === TEAM.ENEMY && s.hp > 0 && !s.path.length && !s.combatTargetId);
     for (const squad of idle) {
       const from = nearestNodeIndex(squad.x, squad.y);
@@ -597,9 +663,9 @@
         .map((node, i) => ({ node, i, path: shortestPath(from, i) }))
         .filter(x => x.node.team !== TEAM.ENEMY && x.path.length > 1)
         .sort((a, b) => {
-          const ap = a.node.kind === 'hq' && a.node.team === TEAM.PLAYER ? -1.5 : 0;
-          const bp = b.node.kind === 'hq' && b.node.team === TEAM.PLAYER ? -1.5 : 0;
-          return (a.path.length + ap) - (b.path.length + bp);
+          const aScore = a.path.length + (a.node.team === TEAM.NEUTRAL ? -0.5 : 0) + (a.node.kind === 'hq' ? 1.4 : 0);
+          const bScore = b.path.length + (b.node.team === TEAM.NEUTRAL ? -0.5 : 0) + (b.node.kind === 'hq' ? 1.4 : 0);
+          return aScore - bScore;
         });
       if (!candidates.length) continue;
       const target = candidates[Math.min(candidates.length - 1, Math.floor(Math.random() * Math.min(2, candidates.length)))];
@@ -610,6 +676,7 @@
 
   function updateMovement(dt) {
     for (const squad of game.squads) {
+      squad.bob += dt * 4;
       if (squad.hp <= 0 || squad.combatTargetId || !squad.path.length) continue;
       const nextIndex = squad.path[0];
       const target = game.nodes[nextIndex];
@@ -629,19 +696,30 @@
     }
   }
 
-  function nearestEnemySquad(squad) {
+  function squadBodyRadius(squad) {
+    return (squad.count >= 4 ? 22 : squad.count >= 2 ? 17 : 12) * scale();
+  }
+
+  function effectiveSquadDistance(a, b) {
+    return Math.max(0, distance(a, b) - squadBodyRadius(a) - squadBodyRadius(b));
+  }
+
+  function nearestEnemyInRange(squad) {
     let target = null;
     let best = Infinity;
     for (const other of game.squads) {
       if (other.team === squad.team || other.hp <= 0) continue;
-      const d = distance(squad, other);
-      if (d < best) { best = d; target = other; }
+      const d = effectiveSquadDistance(squad, other);
+      if (d <= squad.range && d < best) {
+        best = d;
+        target = other;
+      }
     }
     return target;
   }
 
   function nodeUnderSquad(squad) {
-    const radius = 38 * scale();
+    const radius = 40 * scale();
     return game.nodes.find(node => distance(squad, node) <= radius) || null;
   }
 
@@ -649,41 +727,103 @@
     for (const squad of game.squads) {
       if (squad.hp <= 0) continue;
       squad.fireTimer -= dt;
+
       let target = squad.combatTargetId ? getSquad(squad.combatTargetId) : null;
-      if (target && (target.hp <= 0 || distance(squad, target) > squad.range * 1.45)) {
+      if (target && (target.hp <= 0 || effectiveSquadDistance(squad, target) > squad.range * 1.22)) {
         squad.combatTargetId = null;
         target = null;
       }
+
       if (!target) {
-        const candidate = nearestEnemySquad(squad);
-        if (candidate && distance(squad, candidate) <= squad.range) {
-          target = candidate;
-          squad.combatTargetId = candidate.id;
+        target = nearestEnemyInRange(squad);
+        if (target) {
+          squad.combatTargetId = target.id;
           squad.path = [];
         }
       }
+
       if (target && squad.fireTimer <= 0) {
         squad.fireTimer = squad.fireRate;
-        target.hp -= squad.damage * squad.count * .52;
-        syncCount(target);
-        spawnShot(squad, target, squad.team);
+        fireVolley(squad, target, 'squad');
         continue;
       }
+
       const node = nodeUnderSquad(squad);
       if (node && node.kind === 'hq' && node.team !== squad.team && node.team !== TEAM.NEUTRAL) {
         squad.path = [];
         if (squad.fireTimer <= 0) {
           squad.fireTimer = squad.fireRate;
-          node.hp -= squad.damage * squad.count * .40;
-          spawnShot(squad, node, squad.team);
-          if (node.hp <= 0) {
-            node.hp = 0;
-            if (squad.team === TEAM.PLAYER) winLevel();
-            else loseLevel();
-          }
+          fireVolley(squad, node, 'node');
         }
       }
     }
+  }
+
+  function fireVolley(shooter, target, targetType) {
+    const shots = Math.min(3, shooter.count);
+    const totalDamage = shooter.damage * shooter.count * (targetType === 'node' ? .34 : .46);
+    const damagePerShot = totalDamage / shots;
+    const spread = formationOffsets(shots, 9 * scale());
+
+    for (let i = 0; i < shots; i++) {
+      const [ox, oy] = spread[i];
+      game.projectiles.push({
+        id: game.projectileIdCounter++,
+        team: shooter.team,
+        x: shooter.x + ox,
+        y: shooter.y + oy - 3 * scale(),
+        prevX: shooter.x + ox,
+        prevY: shooter.y + oy - 3 * scale(),
+        targetType,
+        targetId: target.id,
+        speed: shooter.projectileSpeed,
+        damage: damagePerShot,
+        life: 1.6,
+        maxLife: 1.6
+      });
+    }
+
+    spawnMuzzleFlash(shooter.x, shooter.y, TEAM_COLOR[shooter.team]);
+  }
+
+  function updateProjectiles(dt) {
+    for (const p of game.projectiles) {
+      p.life -= dt;
+      p.prevX = p.x;
+      p.prevY = p.y;
+      const target = p.targetType === 'squad' ? getSquad(p.targetId) : getNodeById(p.targetId);
+      if (!target || target.hp <= 0) {
+        p.life = 0;
+        continue;
+      }
+      const dx = target.x - p.x;
+      const dy = target.y - p.y;
+      const d = Math.hypot(dx, dy);
+      const step = p.speed * dt;
+      if (d <= step + 3) {
+        p.x = target.x;
+        p.y = target.y;
+        applyProjectileHit(p, target);
+        p.life = 0;
+      } else {
+        p.x += dx / d * step;
+        p.y += dy / d * step;
+      }
+    }
+    game.projectiles = game.projectiles.filter(p => p.life > 0);
+  }
+
+  function applyProjectileHit(projectile, target) {
+    target.hp -= projectile.damage;
+    if (projectile.targetType === 'squad') {
+      syncCount(target);
+      if (target.hp <= 0) spawnBurst(target.x, target.y, TEAM_COLOR[target.team], 11);
+    } else if (target.hp <= 0) {
+      target.hp = 0;
+      if (projectile.team === TEAM.PLAYER) winLevel();
+      else loseLevel();
+    }
+    spawnImpact(target.x, target.y, projectile.team);
   }
 
   function syncCount(squad) {
@@ -694,7 +834,7 @@
   }
 
   function updateCapture(dt) {
-    const captureRadius = 42 * scale();
+    const captureRadius = 43 * scale();
     for (const node of game.nodes) {
       if (node.kind === 'hq' || node.hp <= 0) continue;
       const nearby = game.squads.filter(s => s.hp > 0 && distance(s, node) <= captureRadius);
@@ -715,12 +855,12 @@
       if (node.captureProgress >= 2.6) {
         node.team = team;
         node.spawnQueue = 0;
-        node.spawnCooldown = .35;
+        node.spawnCooldown = game.config.initialSpawnInterval;
         node.productionTimer = 0;
         node.captureProgress = 0;
         node.captureTeam = null;
         spawnBurst(node.x, node.y, TEAM_COLOR[team], 10);
-        if (team === TEAM.PLAYER) showToast('Base conquistada. Sus próximos robots saldrán uno por uno para ti.');
+        if (team === TEAM.PLAYER) showToast('Base conquistada. Ya empieza a producir para ti.');
       }
     }
   }
@@ -732,7 +872,7 @@
       for (let j = i + 1; j < game.squads.length; j++) {
         const b = game.squads[j];
         if (b.hp <= 0 || b.team !== a.team || b.type !== a.type || b.path.length || b.combatTargetId) continue;
-        if (distance(a, b) > 30 * scale()) continue;
+        if (distance(a, b) > 34 * scale()) continue;
         const take = Math.min(5 - a.count, b.count);
         if (take <= 0) continue;
         a.count += take;
@@ -745,13 +885,13 @@
     }
   }
 
-  function updateEffects(dt) {
-    for (const p of game.projectiles) p.life -= dt;
-    game.projectiles = game.projectiles.filter(p => p.life > 0);
+  function updateParticles(dt) {
     for (const p of game.particles) {
       p.life -= dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
+      p.vx *= .96;
+      p.vy *= .96;
     }
     game.particles = game.particles.filter(p => p.life > 0);
   }
@@ -818,15 +958,50 @@
     ui.resultModal.classList.remove('hidden');
   }
 
-  function spawnShot(from, to, team) {
-    game.projectiles.push({ x1: from.x, y1: from.y, x2: to.x, y2: to.y, life: .10, maxLife: .10, color: TEAM_COLOR[team] });
+  function spawnMuzzleFlash(x, y, color) {
+    for (let i = 0; i < 4; i++) {
+      game.particles.push({
+        x, y,
+        vx: (Math.random() - .5) * 34,
+        vy: (Math.random() - .5) * 34,
+        life: .12 + Math.random() * .08,
+        maxLife: .20,
+        color,
+        size: 2.8
+      });
+    }
+  }
+
+  function spawnImpact(x, y, team) {
+    const color = TEAM_COLOR[team];
+    for (let i = 0; i < 6; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const speed = 24 + Math.random() * 48;
+      game.particles.push({
+        x, y,
+        vx: Math.cos(a) * speed,
+        vy: Math.sin(a) * speed,
+        life: .18 + Math.random() * .18,
+        maxLife: .36,
+        color,
+        size: 2 + Math.random() * 1.5
+      });
+    }
   }
 
   function spawnBurst(x, y, color, count = 10) {
     for (let i = 0; i < count; i++) {
       const a = Math.random() * Math.PI * 2;
       const speed = 18 + Math.random() * 44;
-      game.particles.push({ x, y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, life: .35 + Math.random() * .25, maxLife: .60, color });
+      game.particles.push({
+        x, y,
+        vx: Math.cos(a) * speed,
+        vy: Math.sin(a) * speed,
+        life: .35 + Math.random() * .25,
+        maxLife: .60,
+        color,
+        size: 2 + Math.random() * 1.2
+      });
     }
   }
 
@@ -836,10 +1011,12 @@
     drawGround();
     drawRoads();
     drawObstacles();
+    drawRanges();
     drawBases();
     drawIndividuals();
     drawSquads();
-    drawEffects();
+    drawProjectiles();
+    drawParticles();
   }
 
   function drawGround() {
@@ -893,87 +1070,223 @@
       ctx.beginPath(); ctx.ellipse(3*s, 6*s, r, r*.55, 0,0,Math.PI*2); ctx.fill();
       ctx.fillStyle = game.biome.obstacle;
       ctx.beginPath(); ctx.roundRect(-r, -r*.40, r*2, r*.80, r*.28); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.08)';
+      ctx.beginPath(); ctx.ellipse(-r*.25, -r*.12, r*.38, r*.11, 0,0,Math.PI*2); ctx.fill();
       ctx.restore();
     }
   }
 
-  function readyCount(node) {
-    return game.individuals.filter(u => u.homeNode === node.index && u.team === node.team).length;
+  function drawRanges() {
+    const squad = selectedSquadId ? getSquad(selectedSquadId) : null;
+    if (!squad || squad.hp <= 0) return;
+    const body = squadBodyRadius(squad);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(130, 220, 255, .42)';
+    ctx.fillStyle = 'rgba(65, 184, 255, .055)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.arc(squad.x, squad.y, squad.range + body, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  function waitingCount(node) {
+    return waitingIndividuals(node.index, node.team).length;
   }
 
   function drawBases() {
     const s = scale();
     for (const node of game.nodes) {
-      const r = (node.kind === 'hq' ? 31 : 25) * s;
       const color = TEAM_COLOR[node.team];
-      const hover = Math.hypot(pointer.x - node.x, pointer.y - node.y) <= r * 1.5;
+      const isCore = node.kind === 'hq';
+      const r = (isCore ? 34 : 28) * s;
+      const hover = Math.hypot(pointer.x - node.x, pointer.y - node.y) <= r * 1.6;
+
       ctx.save();
       ctx.translate(node.x, node.y);
-      ctx.fillStyle = 'rgba(0,0,0,.23)';
-      ctx.beginPath(); ctx.ellipse(3*s, 8*s, r*1.08, r*.58, 0,0,Math.PI*2); ctx.fill();
-      if (hover || selectedSquadId) {
-        ctx.strokeStyle = hover ? 'rgba(255,255,255,.75)' : 'rgba(255,255,255,.13)';
-        ctx.lineWidth = 1.5 * s;
-        ctx.beginPath(); ctx.arc(0, 0, r * 1.34, 0, Math.PI * 2); ctx.stroke();
-      }
-      ctx.fillStyle = '#17232d';
+
+      // Plataforma y sombra
+      ctx.fillStyle = 'rgba(0,0,0,.22)';
+      ctx.beginPath(); ctx.ellipse(4*s, 12*s, r*1.28, r*.64, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#25323d';
+      ctx.strokeStyle = 'rgba(255,255,255,.12)';
+      ctx.lineWidth = 1.5*s;
+      ctx.beginPath(); ctx.roundRect(-r, -r*.70, r*2, r*1.40, 9*s); ctx.fill(); ctx.stroke();
+
+      // Laterales metálicos
+      ctx.fillStyle = '#18232c';
+      ctx.beginPath(); ctx.roundRect(-r*.86, -r*.52, r*1.72, r*1.03, 7*s); ctx.fill();
       ctx.strokeStyle = color;
-      ctx.lineWidth = 4 * s;
-      ctx.beginPath(); ctx.roundRect(-r*.84, -r*.70, r*1.68, r*1.40, 8*s); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = color;
-      ctx.globalAlpha = .22;
-      ctx.beginPath(); ctx.roundRect(-r*.62, -r*.50, r*1.24, r*.42, 4*s); ctx.fill();
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = '#e8f5ff';
-      ctx.font = `800 ${Math.max(9, 10.5*s)}px system-ui`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(node.kind === 'hq' ? 'CORE' : 'RBT', 0, -r*.25);
-      ctx.strokeStyle = '#e7f4fe';
-      ctx.lineWidth = 1.7 * s;
-      ctx.beginPath(); ctx.moveTo(r*.70, -r*.88); ctx.lineTo(r*.70, -r*1.48); ctx.stroke();
-      ctx.fillStyle = color;
-      ctx.beginPath(); ctx.moveTo(r*.70, -r*1.46); ctx.lineTo(r*1.23, -r*1.27); ctx.lineTo(r*.70, -r*1.08); ctx.closePath(); ctx.fill();
-      if (node.kind === 'hq') {
-        const w = r * 1.48;
-        ctx.fillStyle = 'rgba(0,0,0,.38)'; ctx.fillRect(-w/2, r*.82, w, 4*s);
-        ctx.fillStyle = color; ctx.fillRect(-w/2, r*.82, w * clamp(node.hp/node.maxHp,0,1), 4*s);
-      } else if (node.team !== TEAM.NEUTRAL) {
-        const count = readyCount(node);
-        ctx.fillStyle = 'rgba(0,0,0,.47)';
-        ctx.beginPath(); ctx.roundRect(-19*s, r*.76, 38*s, 16*s, 7*s); ctx.fill();
-        ctx.fillStyle = '#fff';
-        ctx.font = `800 ${9*s}px system-ui`;
-        ctx.fillText(`${Math.min(count,5)}/5`, 0, r*1.02);
+      ctx.lineWidth = 3.5*s;
+      ctx.stroke();
+
+      // Techo
+      ctx.fillStyle = '#334450';
+      ctx.beginPath();
+      ctx.moveTo(-r*.63, -r*.52);
+      ctx.lineTo(-r*.40, -r*.78);
+      ctx.lineTo(r*.45, -r*.78);
+      ctx.lineTo(r*.67, -r*.52);
+      ctx.closePath();
+      ctx.fill();
+
+      // Puerta / reactor
+      if (isCore) {
+        const pulse = 1 + Math.sin(game.elapsed * 3) * .05;
+        ctx.fillStyle = 'rgba(0,0,0,.45)';
+        ctx.beginPath(); ctx.arc(0, 0, r*.42, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = color;
+        ctx.globalAlpha = .28;
+        ctx.beginPath(); ctx.arc(0, 0, r*.33*pulse, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5*s;
+        ctx.beginPath(); ctx.arc(0, 0, r*.33*pulse, 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = '#e8f5ff';
+        ctx.font = `900 ${10*s}px system-ui`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('CORE', 0, 0);
+      } else {
+        ctx.fillStyle = '#0b1218';
+        ctx.beginPath(); ctx.roundRect(-r*.42, -r*.20, r*.84, r*.62, 4*s); ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2*s;
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,.07)';
+        for (let gy = -r*.12; gy < r*.32; gy += 6*s) {
+          ctx.fillRect(-r*.34, gy, r*.68, 2*s);
+        }
+        ctx.fillStyle = '#dff4ff';
+        ctx.font = `900 ${9*s}px system-ui`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('RBT', 0, -r*.44);
       }
+
+      // Antena y bandera
+      ctx.strokeStyle = '#dcebf4';
+      ctx.lineWidth = 1.5*s;
+      ctx.beginPath(); ctx.moveTo(r*.72, -r*.62); ctx.lineTo(r*.72, -r*1.40); ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(r*.72, -r*1.38);
+      ctx.lineTo(r*1.24, -r*1.18);
+      ctx.lineTo(r*.72, -r*.99);
+      ctx.closePath();
+      ctx.fill();
+
+      // Luces
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(-r*.60, -r*.37, 2.4*s, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(r*.60, -r*.37, 2.4*s, 0, Math.PI*2); ctx.fill();
+
+      // Halo táctil discreto
+      if (hover || (selectedSquadId && node.team !== TEAM.PLAYER)) {
+        ctx.strokeStyle = hover ? 'rgba(255,255,255,.70)' : 'rgba(255,255,255,.10)';
+        ctx.lineWidth = 1.5*s;
+        ctx.beginPath(); ctx.arc(0, 0, r*1.42, 0, Math.PI*2); ctx.stroke();
+      }
+
+      // Vida del CORE
+      if (isCore) {
+        const w = r * 1.55;
+        ctx.fillStyle = 'rgba(0,0,0,.42)';
+        ctx.beginPath(); ctx.roundRect(-w/2, r*.83, w, 5*s, 2*s); ctx.fill();
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.roundRect(-w/2, r*.83, w * clamp(node.hp/node.maxHp,0,1), 5*s, 2*s); ctx.fill();
+      }
+
+      // Contador de formación + cuenta regresiva de salida
+      if (node.team !== TEAM.NEUTRAL && node.hp > 0) {
+        const waiting = Math.min(5, waitingCount(node));
+        const seconds = nextSpawnSeconds(node);
+        const interval = node.spawnQueue > 0 ? game.config.initialSpawnInterval : productionInterval(node);
+        const progress = seconds == null ? 0 : clamp(1 - seconds / Math.max(.01, interval), 0, 1);
+        const cy = r * 1.35;
+
+        ctx.fillStyle = 'rgba(5,12,18,.82)';
+        ctx.beginPath(); ctx.roundRect(-31*s, cy, 62*s, 19*s, 8*s); ctx.fill();
+        ctx.fillStyle = '#dcebf5';
+        ctx.font = `800 ${8.5*s}px system-ui`;
+        ctx.textAlign = 'left';
+        ctx.fillText(`${waiting}/5`, -24*s, cy + 9.5*s);
+        ctx.textAlign = 'right';
+        ctx.fillText(seconds == null ? '' : `${seconds.toFixed(1)}s`, 24*s, cy + 9.5*s);
+
+        ctx.strokeStyle = 'rgba(255,255,255,.18)';
+        ctx.lineWidth = 2.8*s;
+        ctx.beginPath(); ctx.arc(0, cy + 9.5*s, 7*s, -Math.PI/2, Math.PI*1.5); ctx.stroke();
+        ctx.strokeStyle = color;
+        ctx.beginPath(); ctx.arc(0, cy + 9.5*s, 7*s, -Math.PI/2, -Math.PI/2 + Math.PI*2*progress); ctx.stroke();
+      }
+
       if (node.captureTeam) {
         const p = clamp(node.captureProgress / 2.6, 0, 1);
         ctx.strokeStyle = TEAM_COLOR[node.captureTeam];
-        ctx.lineWidth = 4 * s;
+        ctx.lineWidth = 4*s;
         ctx.beginPath();
-        ctx.arc(0, 0, r*1.48, -Math.PI/2, -Math.PI/2 + Math.PI*2*p);
+        ctx.arc(0, 0, r*1.52, -Math.PI/2, -Math.PI/2 + Math.PI*2*p);
         ctx.stroke();
       }
+
       ctx.restore();
     }
   }
 
-  function drawRobot(x, y, color, size) {
-    ctx.fillStyle = 'rgba(0,0,0,.22)';
-    ctx.beginPath(); ctx.ellipse(x + 1.5*size, y + 4.5*size, 6.2*size, 3.2*size, 0,0,Math.PI*2); ctx.fill();
+  function drawRobot(x, y, color, size, phase = 0, moving = false) {
+    const bob = moving ? Math.sin(phase) * .9 * size : 0;
+    const leg = moving ? Math.sin(phase) * 2.4 * size : 0;
+    const px = x;
+    const py = y + bob;
+
+    // sombra
+    ctx.fillStyle = 'rgba(0,0,0,.23)';
+    ctx.beginPath(); ctx.ellipse(px+1.5*size, py+8*size, 7*size, 3.2*size, 0,0,Math.PI*2); ctx.fill();
+
+    // piernas
+    ctx.strokeStyle = '#18232c';
+    ctx.lineWidth = 3*size;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(px-3*size, py+4*size); ctx.lineTo(px-4*size-leg, py+9*size);
+    ctx.moveTo(px+3*size, py+4*size); ctx.lineTo(px+4*size+leg, py+9*size);
+    ctx.stroke();
+
+    // cuerpo
     ctx.fillStyle = '#263746';
     ctx.strokeStyle = color;
-    ctx.lineWidth = 1.8 * size;
-    ctx.beginPath(); ctx.roundRect(x-5.5*size, y-6*size, 11*size, 12*size, 2.4*size); ctx.fill(); ctx.stroke();
+    ctx.lineWidth = 2*size;
+    ctx.beginPath(); ctx.roundRect(px-6*size, py-3*size, 12*size, 10*size, 3*size); ctx.fill(); ctx.stroke();
+
+    // cabeza
+    ctx.fillStyle = '#304756';
+    ctx.beginPath(); ctx.roundRect(px-5.5*size, py-10*size, 11*size, 8*size, 3*size); ctx.fill(); ctx.stroke();
+
+    // visor
     ctx.fillStyle = color;
-    ctx.beginPath(); ctx.arc(x-2.2*size, y-1*size, 1.2*size, 0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(x+2.2*size, y-1*size, 1.2*size, 0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha = .88;
+    ctx.beginPath(); ctx.roundRect(px-3.8*size, py-7.7*size, 7.6*size, 2.4*size, 1.2*size); ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // hombros
+    ctx.fillStyle = '#1b2934';
+    ctx.beginPath(); ctx.arc(px-7*size, py, 2.4*size, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(px+7*size, py, 2.4*size, 0, Math.PI*2); ctx.fill();
+
+    // arma
+    ctx.strokeStyle = '#d7e7ef';
+    ctx.lineWidth = 2*size;
+    ctx.beginPath(); ctx.moveTo(px+5*size, py+1*size); ctx.lineTo(px+10*size, py-1*size); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(px+10.5*size, py-1.2*size, 1.3*size, 0, Math.PI*2); ctx.fill();
   }
 
   function drawIndividuals() {
     const s = scale();
     for (const unit of game.individuals) {
-      drawRobot(unit.x, unit.y, TEAM_COLOR[unit.team], .82 * s);
+      drawRobot(unit.x, unit.y, TEAM_COLOR[unit.team], .84*s, unit.walkPhase, unit.state === 'exiting');
     }
   }
 
@@ -992,36 +1305,69 @@
     const s = scale();
     for (const squad of game.squads) {
       const color = TEAM_COLOR[squad.team];
-      const offsets = formationOffsets(squad.count, 15 * s);
+      const offsets = formationOffsets(squad.count, 17 * s);
+
+      // zona de selección visual más clara
       if (squad.selected) {
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2 * s;
-        ctx.setLineDash([4*s, 4*s]);
-        ctx.beginPath(); ctx.arc(squad.x, squad.y, 26*s, 0, Math.PI*2); ctx.stroke();
-        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(255,255,255,.07)';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2*s;
+        ctx.beginPath(); ctx.arc(squad.x, squad.y, 31*s, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(squad.x, squad.y-38*s);
+        ctx.lineTo(squad.x-5*s, squad.y-31*s);
+        ctx.lineTo(squad.x+5*s, squad.y-31*s);
+        ctx.closePath();
+        ctx.fill();
       }
-      for (const [ox, oy] of offsets) drawRobot(squad.x + ox, squad.y + oy, color, s);
+
+      const moving = squad.path.length > 0;
+      offsets.forEach(([ox, oy], i) => {
+        drawRobot(squad.x + ox, squad.y + oy, color, 1.05*s, squad.bob + i*.7, moving);
+      });
+
       const hpRatio = clamp(squad.hp / Math.max(1, squad.maxHp), 0, 1);
       if (hpRatio < .99) {
-        const w = 32 * s;
-        ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(squad.x-w/2, squad.y-27*s, w, 3*s);
-        ctx.fillStyle = color; ctx.fillRect(squad.x-w/2, squad.y-27*s, w*hpRatio, 3*s);
+        const w = 40*s;
+        ctx.fillStyle = 'rgba(0,0,0,.45)';
+        ctx.beginPath(); ctx.roundRect(squad.x-w/2, squad.y-35*s, w, 4*s, 2*s); ctx.fill();
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.roundRect(squad.x-w/2, squad.y-35*s, w*hpRatio, 4*s, 2*s); ctx.fill();
       }
     }
   }
 
-  function drawEffects() {
+  function drawProjectiles() {
     const s = scale();
+    ctx.lineCap = 'round';
     for (const p of game.projectiles) {
-      ctx.globalAlpha = clamp(p.life / p.maxLife, 0, 1);
-      ctx.strokeStyle = p.color;
-      ctx.lineWidth = 2.2 * s;
-      ctx.beginPath(); ctx.moveTo(p.x1,p.y1); ctx.lineTo(p.x2,p.y2); ctx.stroke();
+      const color = TEAM_COLOR[p.team];
+      ctx.globalAlpha = .32;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 5*s;
+      ctx.beginPath(); ctx.moveTo(p.prevX, p.prevY); ctx.lineTo(p.x, p.y); ctx.stroke();
+
+      ctx.globalAlpha = .92;
+      ctx.strokeStyle = '#f7fbff';
+      ctx.lineWidth = 1.5*s;
+      ctx.beginPath(); ctx.moveTo(p.prevX, p.prevY); ctx.lineTo(p.x, p.y); ctx.stroke();
+
+      ctx.fillStyle = color;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 8*s;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 3.2*s, 0, Math.PI*2); ctx.fill();
+      ctx.shadowBlur = 0;
     }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawParticles() {
+    const s = scale();
     for (const p of game.particles) {
       ctx.globalAlpha = clamp(p.life / p.maxLife, 0, 1);
       ctx.fillStyle = p.color;
-      ctx.beginPath(); ctx.arc(p.x,p.y,2.2*s,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x, p.y, (p.size || 2.2)*s, 0, Math.PI*2); ctx.fill();
     }
     ctx.globalAlpha = 1;
   }
@@ -1038,20 +1384,25 @@
     pointer = p;
     const s = scale();
 
-    const squad = game.squads
+    // Área táctil deliberadamente mayor que el dibujo del pelotón.
+    const touchRadius = 64 * s;
+    const squadHit = game.squads
       .filter(q => q.team === TEAM.PLAYER && q.hp > 0)
       .map(q => ({ q, d: distance(p, q) }))
+      .filter(x => x.d <= touchRadius)
       .sort((a,b) => a.d - b.d)[0];
-    if (squad && squad.d <= 38 * s) {
-      selectSquad(squad.q);
+
+    if (squadHit) {
+      selectSquad(squadHit.q);
       return;
     }
 
     const nodeHit = game.nodes
       .map(node => ({ node, d: distance(p, node) }))
+      .filter(x => x.d <= 64 * s)
       .sort((a,b) => a.d - b.d)[0];
 
-    if (nodeHit && nodeHit.d <= 50 * s) {
+    if (nodeHit) {
       if (selectedSquadId) {
         sendSquad(getSquad(selectedSquadId), nodeHit.node.index);
         return;
@@ -1067,7 +1418,8 @@
           }
           return;
         }
-        showToast('Todavía están saliendo robots de esta base.');
+        const seconds = nextSpawnSeconds(nodeHit.node);
+        showToast(seconds == null ? 'Esta base no produce robots.' : `Próximo robot en ${seconds.toFixed(1)} s.`);
         return;
       }
     }
