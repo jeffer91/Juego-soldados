@@ -6,8 +6,8 @@ const cors = {
   'access-control-allow-methods': 'POST, OPTIONS'
 };
 const allowed = new Set([
-  'session_start','session_end','level_select','level_start','level_win','level_fail','level_retry','level_exit','unit_upgrade',
-  'ad_offer','ad_clicked','ad_started','ad_completed','reward_received','ad_failed','ad_skipped','analytics_endpoint_changed'
+  'session_start','session_end','level_select','cycle_select','level_start','level_win','level_fail','level_retry','level_exit','unit_upgrade',
+  'balance_profile','assist_available','ad_offer','ad_clicked','ad_started','ad_completed','reward_received','ad_failed','ad_skipped','analytics_endpoint_changed'
 ]);
 const text = (v: unknown, max=180) => typeof v === 'string' ? v.slice(0,max) : null;
 const num = (v: unknown) => typeof v === 'number' && Number.isFinite(v) ? Math.round(v) : null;
