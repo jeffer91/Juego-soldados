@@ -176,6 +176,7 @@
   }
 
   function showOutro() {
+    if ($('resultModal')?.classList.contains('hidden')) return;
     const s = state();
     const level = Math.max(1, Number(s?.currentLevel || 1));
     const victory = ($('resultEyebrow')?.textContent || '').toUpperCase().includes('VICTORIA');
