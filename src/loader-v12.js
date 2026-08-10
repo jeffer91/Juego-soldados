@@ -7,11 +7,11 @@
       return response.text();
     })
     .then(source => {
-      const oldText = "corrected = window.RBTwarV11Patch(corrected, replaceOne);\\n\\n' + anchor);";
-      const newText = "corrected = window.RBTwarV11Patch(corrected, replaceOne);\\n      corrected = window.RBTwarV12Patch(corrected, replaceOne);\\n\\n' + anchor);";
-      if (!source.includes(oldText)) throw new Error('No se encontró el punto de extensión v11');
+      const marker = 'corrected = window.RBTwarV11Patch(corrected, replaceOne);';
+      if (!source.includes(marker)) throw new Error('No se encontró el punto de extensión v11');
+      const insertion = '\\\\n      corrected = window.RBTwarV12Patch(corrected, replaceOne);';
       const script = document.createElement('script');
-      script.textContent = source.replace(oldText, newText);
+      script.textContent = source.replace(marker, marker + insertion);
       document.head.appendChild(script);
     })
     .catch(error => {
