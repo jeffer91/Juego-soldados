@@ -5,12 +5,15 @@ RBTwar es un juego de estrategia en tiempo real ligero para **celulares Android*
 ## Diseño actual
 
 - Mobile-first y pensado para jugarse en **horizontal**.
+- Tiene **pantalla de inicio** antes de entrar a la batalla.
 - El mapa ocupa prácticamente toda la pantalla; HUD y botones son compactos.
 - Si el celular está en vertical, el juego pide girarlo.
 - Controles táctiles: toca un pelotón azul y luego toca una base objetivo.
-- Bases que producen robots automáticamente.
-- Al acumularse 5 robots se forma automáticamente un pelotón.
-- También se puede sacar un pelotón parcial de 1 a 4 robots tocando una base propia con unidades almacenadas.
+- Las bases producen robots automáticamente **uno por uno**.
+- Cada robot aparece dentro de la base y **sale caminando hasta la zona de reunión**.
+- Los robots se ven individualmente mientras se generan.
+- Cuando se acumulan **5 robots**, se convierten automáticamente en un pelotón.
+- Si hay entre 1 y 4 robots listos, el jugador puede tocar su base para formar un pelotón parcial.
 - Los pelotones pueden fusionarse hasta un máximo de 5 robots.
 - Movimiento limitado por las rutas del mapa.
 - Combate automático por cercanía.
@@ -31,6 +34,26 @@ Segundo mapa del desierto. Tiene más cruces, tres bases neutrales y dos fábric
 
 Al vencer el Mapa 1 se desbloquea el Mapa 2. A partir del Mapa 3 el prototipo puede generar variaciones para mantener la progresión infinita.
 
+## Flujo actual
+
+```text
+Pantalla de inicio
+      ↓
+JUGAR
+      ↓
+La base genera 1 robot
+      ↓
+El robot sale de la base
+      ↓
+Se reúne con los demás
+      ↓
+5 robots = 1 pelotón
+      ↓
+Seleccionar pelotón
+      ↓
+Tocar base objetivo
+```
+
 ## Tecnología
 
 - HTML
@@ -41,7 +64,7 @@ Al vencer el Mapa 1 se desbloquea el Mapa 2. A partir del Mapa 3 el prototipo pu
 - Sin imágenes pesadas para mantener el juego liviano
 - Progreso guardado con `localStorage`
 
-## Probar desde Visual Studio Code
+## Actualizar y probar desde Visual Studio Code
 
 ```powershell
 D:
