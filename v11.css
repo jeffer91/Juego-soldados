@@ -1,0 +1,65 @@
+/* RBTwar v11 — profundidad estratégica y Frente Infinito */
+.strategy-role {
+  display: grid;
+  gap: 2px;
+  padding: 6px 7px;
+  border: 1px solid rgba(104,202,255,.13);
+  border-radius: 9px;
+  background: rgba(6,17,27,.58);
+}
+.strategy-role small {
+  color: #6fd2ff;
+  font-size: 6px;
+  font-weight: 950;
+  letter-spacing: .9px;
+}
+.strategy-role strong {
+  color: #e9f7ff;
+  font-size: 7px;
+  line-height: 1.25;
+}
+.strategy-role span {
+  color: #829bad;
+  font-size: 6px;
+  line-height: 1.2;
+}
+
+.endless-step {
+  margin-left: 12px;
+}
+.endless-step::before {
+  content: "∞";
+  position: absolute;
+  left: -11px;
+  top: 50%;
+  z-index: 3;
+  transform: translateY(-50%);
+  color: #ffd36b;
+  font-size: 13px;
+  font-weight: 950;
+  text-shadow: 0 0 12px rgba(255,197,68,.4);
+}
+.level-node.endless-node {
+  border-color: #ffd36b;
+  color: #fff4c9;
+  background: linear-gradient(145deg,#584519,#262317);
+  box-shadow: 0 0 0 3px rgba(255,199,72,.10), 0 8px 24px rgba(0,0,0,.28);
+}
+.level-node.endless-node.selected {
+  border-color: #fff;
+  box-shadow: 0 0 0 4px rgba(255,205,92,.20), 0 0 22px rgba(255,190,65,.30);
+}
+.endless-step .level-stars { color: #ffd36b; }
+
+body.endless-unlocked .level-map {
+  border-color: rgba(255,204,91,.18);
+}
+body.endless-unlocked .campaign-progress i {
+  box-shadow: 0 0 10px rgba(255,202,80,.35);
+}
+
+@media (max-height: 420px) and (orientation: landscape) {
+  .strategy-role { padding: 4px 6px; gap: 1px; }
+  .strategy-role span { display: none; }
+  .strategy-role strong { font-size: 6.5px; }
+}
