@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="menu-v8.css" />
   <link rel="stylesheet" href="v10.css" />
   <link rel="stylesheet" href="v11.css" />
+  <link rel="stylesheet" href="v12.css" />
 </head>
 <body>
   <div id="app">
@@ -63,10 +64,10 @@
             <div class="start-copy">
               <small>ESTRATEGIA TÁCTICA DE ROBOTS</small>
               <h1>RBTwar</h1>
-              <p>Conquista fábricas, mejora tu ejército, supera 30 niveles y continúa en el Frente Infinito.</p>
+              <p>Conquista fábricas, mejora tu ejército y sigue avanzando nivel tras nivel.</p>
             </div>
             <div class="start-meta">
-              <span class="meta-chip"><b id="startProgress">1 de 30</b><small>NIVELES</small></span>
+              <span class="meta-chip"><b id="startProgress">Nivel máximo 1</b><small>NIVELES</small></span>
               <span class="meta-chip coin"><b id="startCoins">0 monedas</b><small>ARSENAL</small></span>
             </div>
           </div>
@@ -90,9 +91,9 @@
 
             <div class="campaign-footer">
               <div class="campaign-summary">
-                <div class="zone-badge"><small>ZONA</small><strong id="campaignZone">Desierto Inicial</strong></div>
+                <div class="zone-badge"><small>ZONA</small><strong id="campaignZone">Desierto · Nivel 1</strong></div>
                 <div class="army-badge"><small>UNIDADES</small><strong id="campaignUnits">Básico</strong></div>
-                <div class="campaign-progress"><span><i id="campaignProgressFill"></i></span><small>PROGRESO TOTAL</small></div>
+                <div class="campaign-progress"><span><i id="campaignProgressFill"></i></span><small>CICLO DE 10 NIVELES</small></div>
               </div>
               <button id="startBtn" class="start-button" type="button">JUGAR NIVEL 1</button>
             </div>
@@ -158,9 +159,10 @@
 
   <script src="src/patch-v10.js" defer></script>
   <script src="src/patch-v11.js" defer></script>
-  <script src="src/loader-v11.js" defer></script>
+  <script src="src/patch-v12.js" defer></script>
+  <script src="src/loader-v12.js" defer></script>
   <script src="src/menu-v8.js" defer></script>
-  <script src="src/menu-v11.js" defer></script>
+  <script src="src/menu-v12.js" defer></script>
   <script src="src/audio-v10.js" defer></script>
 </body>
 </html>
