@@ -3,7 +3,8 @@
 
   const AudioCtx=window.AudioContext||window.webkitAudioContext;
   const button=document.getElementById('musicBtn');
-  let enabled=localStorage.getItem('rbtwar-music')!=='off';
+  const MUSIC_KEY='rbtwar-music-v36';
+  let enabled=localStorage.getItem(MUSIC_KEY)!=='off';
   let ac=null,master=null,timer=null,nextAt=0,step=0,mode='menu',unlocked=false;
 
   const midi=n=>440*Math.pow(2,(n-69)/12);
@@ -93,7 +94,7 @@
   function wire(){['startScreen','resultModal','pauseModal','experienceOverlay'].forEach(observe);}
 
   button?.addEventListener('click',()=>{
-    enabled=!enabled;localStorage.setItem('rbtwar-music',enabled?'on':'off');setButton();
+    enabled=!enabled;localStorage.setItem(MUSIC_KEY,enabled?'on':'off');setButton();
     if(enabled)unlock();else fade(.0001,.12);
   });
 
