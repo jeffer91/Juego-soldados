@@ -67,7 +67,7 @@
         "(level<=5?1:1+Math.floor((level-4)/5))",
         "Math.min(5,(level<=5?1:1+Math.floor((level-4)/5)))"
       );
-      const progressNeedle='ui.startProgress.textContent='+String.fromCharCode(96)+'\\${save.unlockedLevel} de \\${MAX_LEVEL} niveles desbloqueados'+String.fromCharCode(96)+';';
+      const progressNeedle='ui.startProgress.textContent='+String.fromCharCode(96)+'\${save.unlockedLevel} de \${MAX_LEVEL} niveles desbloqueados'+String.fromCharCode(96)+';';
       code = replaceRequired(
         code,
         progressNeedle,
