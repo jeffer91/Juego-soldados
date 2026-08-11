@@ -12,58 +12,61 @@
   const campaignZone = $('campaignZone');
   const campaignUnits = $('campaignUnits');
   const campaignProgressFill = $('campaignProgressFill');
-  const selectedLevelInfo = $('selectedLevelInfo');
-  const coinCount = $('coinCount');
+  const levelPath = $('levelPath');
 
   const ZONES = ['Desierto', 'Cañón', 'Bosque', 'Nieve', 'Ciudad', 'Élite'];
-  const unitMeta = {
-    basic: { icon: '◆', role: 'CAPTURA' },
-    fast: { icon: '⚡', role: 'RÁPIDO' },
-    heavy: { icon: '⬢', role: 'BLINDADO' },
-    sniper: { icon: '◎', role: 'ALCANCE' }
-  };
+  const FAMILY_META = [
+    { icon:'◆', role:'INFANTERÍA' },
+    { icon:'◉', role:'VELOCIDAD' },
+    { icon:'⬢', role:'BLINDADO' },
+    { icon:'◎', role:'ALCANCE' },
+    { icon:'✚', role:'SOPORTE' },
+    { icon:'✦', role:'ESPECIAL' }
+  ];
 
   let activeTab = 'campaign';
+  let upgradeFrame = 0;
+  let pendingMessage = '';
+
   function api() { return window.RBTwarAPI || null; }
 
-  function showTab(tab) {
-    activeTab = tab;
-    const campaign = tab === 'campaign';
-    campaignTab?.classList.toggle('active', campaign);
-    upgradesTab?.classList.toggle('active', !campaign);
-    campaignPanel?.classList.toggle('hidden', !campaign);
-    upgradesPanel?.classList.toggle('hidden', campaign);
-    if (!campaign) refreshUpgrades();
-  }
-
   function zoneFor(level, meta) {
-    const key = meta?.biome;
     const byKey = { desert:'Desierto', canyon:'Cañón', forest:'Bosque', snow:'Nieve', city:'Ciudad', elite:'Élite' };
-    return byKey[key] || ZONES[Math.floor((Math.max(1, level) - 1) / 5) % ZONES.length];
+    return byKey[meta?.biome] || ZONES[Math.floor((Math.max(1, level) - 1) / 5) % ZONES.length];
   }
 
   function refreshCampaign() {
     const state = api()?.getState?.();
     if (!state) return;
-    const level = Math.max(1, state.currentLevel || 1);
-    const unlocked = (state.catalog || []).filter(u => u.unlocked).map(u => u.short || u.name.slice(0,3).toUpperCase());
+    const level = Math.max(1, Number(state.currentLevel || 1));
+    const catalog = state.catalog || [];
+    const byType = new Map(catalog.map(unit => [unit.type, unit]));
+    const battleTypes = (state.battleUnits || api()?.getBattleUnits?.(level) || []).slice(0, 4);
+    const battleUnits = battleTypes.map(type => byType.get(type)).filter(Boolean);
+
     if (campaignZone) campaignZone.textContent = zoneFor(level, state.levelMeta);
-    if (campaignUnits) campaignUnits.textContent = unlocked.join(' · ') || 'BAS';
+    if (campaignUnits) {
+      const text = battleUnits.length ? battleUnits.map(u => u.short).join(' · ') : 'BAS';
+      if (campaignUnits.textContent !== text) campaignUnits.textContent = text;
+    }
     if (campaignProgressFill) campaignProgressFill.style.width = `${(((level - 1) % 10) + 1) * 10}%`;
   }
 
   function unitCard(unit, coins) {
     const card = document.createElement('article');
     card.className = `upgrade-card unit-${unit.type}${unit.unlocked ? '' : ' locked'}`;
-    const meta = unitMeta[unit.type] || { icon:'●', role:'' };
+    card.dataset.type = unit.type;
+    card.dataset.family = String(unit.family || 0);
+    const family = FAMILY_META[unit.family || 0] || FAMILY_META[0];
+    const role = unit.role ? `${family.role} · ${unit.role}` : family.role;
 
     const top = document.createElement('div');
     top.className = 'upgrade-card-top';
     top.innerHTML = `
-      <div class="unit-emblem">${meta.icon}</div>
+      <div class="unit-emblem">${family.icon}</div>
       <div class="unit-copy">
         <strong>${unit.name}</strong>
-        <span>${unit.unlocked ? meta.role : `🔒 Nivel ${unit.unlock}`}</span>
+        <span>${unit.unlocked ? role : `🔒 Nivel ${unit.unlock}`}</span>
       </div>
       <div class="unit-level">${unit.level}</div>`;
 
@@ -95,17 +98,40 @@
     return card;
   }
 
-  function refreshUpgrades(message = '') {
+  function renderUpgrades(message = '') {
+    upgradeFrame = 0;
+    if (activeTab !== 'upgrades') return;
     const state = api()?.getState?.();
     if (!state || !upgradeGrid) return;
-    upgradeGrid.innerHTML = '';
+
+    const fragment = document.createDocumentFragment();
+    for (const unit of state.catalog || []) fragment.appendChild(unitCard(unit, state.coins));
+    upgradeGrid.replaceChildren(fragment);
+
     if (upgradeCoins) upgradeCoins.textContent = String(state.coins);
-    for (const unit of state.catalog || []) upgradeGrid.appendChild(unitCard(unit, state.coins));
     if (upgradeStatus) {
       upgradeStatus.textContent = message;
       upgradeStatus.classList.toggle('success', Boolean(message));
     }
+    pendingMessage = '';
     refreshCampaign();
+  }
+
+  function queueUpgrades(message = '') {
+    if (message) pendingMessage = message;
+    if (activeTab !== 'upgrades' || upgradeFrame) return;
+    upgradeFrame = requestAnimationFrame(() => renderUpgrades(pendingMessage));
+  }
+
+  function showTab(tab) {
+    activeTab = tab;
+    const campaign = tab === 'campaign';
+    campaignTab?.classList.toggle('active', campaign);
+    upgradesTab?.classList.toggle('active', !campaign);
+    campaignPanel?.classList.toggle('hidden', !campaign);
+    upgradesPanel?.classList.toggle('hidden', campaign);
+    if (campaign) refreshCampaign();
+    else queueUpgrades();
   }
 
   function buy(type) {
@@ -113,24 +139,25 @@
     if (!result) return;
     if (result.ok) {
       const unit = api().getCatalog().find(u => u.type === type);
-      refreshUpgrades(`✓ ${unit.name} Nv.${result.level}`);
-    } else if (result.reason === 'coins') refreshUpgrades(`🪙 ${result.cost}`);
-    else if (result.reason === 'locked') refreshUpgrades(`🔒 Nivel ${result.unlock}`);
-    else if (result.reason === 'max') refreshUpgrades('MÁX.');
+      queueUpgrades(`✓ ${unit.name} Nv.${result.level}`);
+    } else if (result.reason === 'coins') queueUpgrades(`🪙 ${result.cost}`);
+    else if (result.reason === 'locked') queueUpgrades(`🔒 Nivel ${result.unlock}`);
+    else if (result.reason === 'max') queueUpgrades('MÁX.');
   }
 
   campaignTab?.addEventListener('click', () => showTab('campaign'));
   upgradesTab?.addEventListener('click', () => showTab('upgrades'));
+  levelPath?.addEventListener('click', () => setTimeout(refreshCampaign, 0));
 
   window.addEventListener('rbtwar:ready', () => {
     document.body.classList.add('menu-open');
     refreshCampaign();
-    refreshUpgrades();
     showTab(activeTab);
   });
+
   window.addEventListener('rbtwar:state', () => {
     refreshCampaign();
-    if (activeTab === 'upgrades') refreshUpgrades();
+    if (activeTab === 'upgrades') queueUpgrades();
   });
 
   const startScreen = $('startScreen');
@@ -140,11 +167,8 @@
       document.body.classList.toggle('menu-open', visible);
       if (visible) {
         refreshCampaign();
-        if (activeTab === 'upgrades') refreshUpgrades();
+        if (activeTab === 'upgrades') queueUpgrades();
       }
     }).observe(startScreen, { attributes:true, attributeFilter:['class'] });
   }
-
-  if (selectedLevelInfo) new MutationObserver(refreshCampaign).observe(selectedLevelInfo, { childList:true, characterData:true, subtree:true });
-  if (coinCount) new MutationObserver(() => activeTab === 'upgrades' && refreshUpgrades()).observe(coinCount, { childList:true, characterData:true, subtree:true });
 })();
