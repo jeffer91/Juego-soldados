@@ -72,7 +72,7 @@
 
     const stats = document.createElement('div');
     stats.className = 'upgrade-stats';
-    const factor = 1 + (unit.level - 1) * .12;
+    const factor = 1 + (unit.level - 1) * .16;
     stats.innerHTML = `
       <span title="Vida"><b>♥</b>${Math.round(unit.hp * factor)}</span>
       <span title="Ataque"><b>⚔</b>${Math.round(unit.damage * factor)}</span>
