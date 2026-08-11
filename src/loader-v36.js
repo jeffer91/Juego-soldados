@@ -67,7 +67,7 @@
         "(level<=5?1:1+Math.floor((level-4)/5))",
         "Math.min(5,(level<=5?1:1+Math.floor((level-4)/5)))"
       );
-      const progressNeedle='ui.startProgress.textContent='+String.fromCharCode(96)+'\\${save.unlockedLevel} de \\${MAX_LEVEL} niveles desbloqueados'+String.fromCharCode(96)+';';
+      const progressNeedle='ui.startProgress.textContent='+String.fromCharCode(96)+'\${save.unlockedLevel} de \${MAX_LEVEL} niveles desbloqueados'+String.fromCharCode(96)+';';
       code = replaceRequired(
         code,
         progressNeedle,
@@ -84,23 +84,18 @@
       );
       code = code.replace("if(level>1&&[6,11,16,21,26].includes(level))","if(level>1&&(level-1)%5===0)");
 
-      // Encuentro de pelotones: genera un evento solo cuando se adquiere un nuevo objetivo.
       code = replaceRequired(
         code,
         "if(!t){t=nearestEnemy(s);if(t)s.combatTargetId=t.id;}",
         "if(!t){t=nearestEnemy(s);if(t){s.combatTargetId=t.id;window.dispatchEvent(new CustomEvent('rbtwar:engage',{detail:{team:s.team,type:s.type,enemyTeam:t.team,enemyType:t.type}}));}}",
         'evento de encuentro'
       );
-
-      // Cada volea informa al sistema de efectos.
       code = replaceRequired(
         code,
         "spawnMuzzle(shooter.x,shooter.y,TEAM_COLOR[shooter.team],shooter.type);}",
         "spawnMuzzle(shooter.x,shooter.y,TEAM_COLOR[shooter.team],shooter.type);window.dispatchEvent(new CustomEvent('rbtwar:shot',{detail:{team:shooter.team,type:shooter.type,targetType,shots}}));}",
         'evento de disparo'
       );
-
-      // Al capturar una fábrica desaparecen los robots individuales del antiguo propietario.
       code = replaceRequired(
         code,
         "if(n.captureProgress>=2.6){n.team=team;n.spawnQueue=0;",
@@ -113,16 +108,12 @@
         "n.captureProgress=0;n.captureTeam=null;spawnBurst(n.x,n.y,TEAM_COLOR[team],10);repositionWaiting();window.dispatchEvent(new CustomEvent('rbtwar:capture',{detail:{team,previousTeam,nodeId:n.id,type:n.unitType}}));",
         'evento de captura'
       );
-
-      // Regla de seguridad: ningún robot individual puede sobrevivir ligado a una base de otro equipo.
       code = replaceRequired(
         code,
         "function cleanup(){const gone=",
         "function cleanup(){game.individuals=game.individuals.filter(u=>{const home=game.nodes[u.homeNode];return home&&home.team===u.team;});const gone=",
         'limpieza de individuos huérfanos'
       );
-
-      // Caída del CORE y eventos finales de partida.
       code = replaceRequired(
         code,
         "else if(t.hp<=0){t.hp=0;if(p.team===TEAM.PLAYER)winLevel();else loseLevel();}",
