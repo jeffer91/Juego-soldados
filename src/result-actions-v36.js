@@ -8,13 +8,14 @@
   function victory(){return String($('resultEyebrow')?.textContent||'').toUpperCase().includes('VICTORIA');}
   function sync(){
     const visible=!modal.classList.contains('hidden');
-    btn.classList.toggle('hidden',!visible||!victory());
-    if(!visible||!victory())return;
+    btn.classList.toggle('hidden',!visible);
+    if(!visible)return;
     try{
       const s=window.RBTwarAPI?.getState?.();
       const affordable=(s?.catalog||[]).some(u=>u.unlocked&&u.level<u.maxLevel&&u.cost>0&&u.cost<=Number(s.coins||0));
       btn.classList.toggle('upgrade-ready',affordable);
-      btn.textContent=affordable?'⬆ MEJORAR':'MEJORAS';
+      if(victory())btn.textContent=affordable?'⬆ MEJORAR':'MEJORAS';
+      else btn.textContent=affordable?'⬆ MEJORAR Y VOLVER':'MEJORAS';
     }catch(_){btn.textContent='MEJORAS';}
   }
 
@@ -29,5 +30,5 @@
   new MutationObserver(sync).observe(modal,{attributes:true,attributeFilter:['class']});
   window.addEventListener('rbtwar:state',sync);
   sync();
-  console.info('RBTwar acciones de resultado v36 listas');
+  console.info('RBTwar acciones de resultado v40 listas');
 })();
