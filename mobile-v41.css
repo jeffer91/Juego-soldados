@@ -1,0 +1,249 @@
+/* RBTwar v41 — soporte móvil real en vertical y horizontal */
+.rotate-overlay { display: none !important; }
+
+@media (orientation: portrait) and (max-width: 900px) {
+  html, body {
+    width: 100%;
+    min-height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  #app {
+    visibility: visible !important;
+    width: 100%;
+    height: 100dvh;
+    grid-template-rows: 48px minmax(0, 1fr) 46px;
+  }
+
+  body.menu-open #app {
+    grid-template-rows: 48px minmax(0, 1fr) 0;
+  }
+
+  .topbar {
+    gap: 5px;
+    padding-left: max(6px, env(safe-area-inset-left));
+    padding-right: max(6px, env(safe-area-inset-right));
+  }
+
+  .brand { gap: 5px; }
+  .brand-mark {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+    border-radius: 9px;
+    font-size: 15px;
+  }
+  .brand strong { font-size: 12px; }
+  .brand small { display: none; }
+
+  .hud { gap: 3px; }
+  .hud-chip {
+    min-width: 45px;
+    height: 32px;
+    padding: 0 5px;
+    gap: 3px;
+    font-size: 10px;
+  }
+  .icon-btn {
+    width: 34px;
+    height: 32px;
+    padding: 0;
+    font-size: 12px;
+  }
+
+  .game-shell {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #gameCanvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  .bottombar {
+    min-height: 46px;
+    padding: 4px max(7px, env(safe-area-inset-right))
+      max(4px, env(safe-area-inset-bottom))
+      max(7px, env(safe-area-inset-left));
+  }
+  .bottombar button {
+    width: 48px;
+    height: 34px;
+  }
+
+  .start-screen {
+    display: block;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .start-card {
+    width: 100%;
+    max-height: none;
+    min-height: calc(100% - 2px);
+    margin: 0 auto;
+    overflow: visible;
+    padding: 9px;
+    gap: 8px;
+    border-radius: 17px;
+  }
+
+  .start-hero {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px;
+    min-height: 48px;
+  }
+  .start-logo-wrap,
+  .start-logo {
+    width: 48px;
+    height: 48px;
+  }
+  .start-logo {
+    border-radius: 14px;
+    font-size: 26px;
+  }
+  .start-copy h1 { font-size: 25px; }
+  .start-copy p { display: none; }
+  .start-meta { display: none; }
+
+  .start-tabs {
+    height: 34px;
+  }
+  .start-tab {
+    flex: 1;
+    height: 27px;
+    font-size: 8px;
+  }
+
+  .campaign-panel {
+    gap: 8px;
+  }
+
+  .level-map {
+    min-height: 142px;
+    padding: 8px 7px 6px;
+    overflow: hidden;
+  }
+
+  .level-map-head {
+    padding: 0 2px 5px;
+  }
+
+  .level-path {
+    height: 104px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    justify-content: flex-start;
+    padding: 12px 8px 16px;
+    touch-action: pan-x;
+    scrollbar-width: none;
+  }
+  .level-path::-webkit-scrollbar { display: none; }
+  .level-step {
+    flex: 0 0 76px;
+    height: 70px;
+  }
+  .level-node {
+    width: 44px;
+    height: 44px;
+    font-size: 11px;
+  }
+  .level-step::after {
+    left: 55px;
+    width: 43px;
+  }
+  .level-stars {
+    top: 51px;
+  }
+
+  .campaign-footer {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .campaign-summary {
+    grid-template-columns: 1fr 1.35fr;
+    gap: 5px;
+  }
+  .campaign-progress { display: none; }
+
+  .zone-badge,
+  .army-badge {
+    min-height: 42px;
+    padding: 7px 8px;
+  }
+
+  .zone-badge strong,
+  .army-badge strong {
+    font-size: 9px;
+  }
+
+  .start-button {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    font-size: 12px;
+  }
+
+  .upgrades-panel {
+    min-height: 220px;
+    max-height: none;
+    padding: 7px;
+  }
+
+  .upgrade-grid {
+    min-height: 160px;
+    padding-bottom: 6px;
+  }
+
+  .upgrade-card {
+    flex: 0 0 min(236px, 78vw);
+    min-width: min(236px, 78vw);
+  }
+
+  .tutorial {
+    bottom: 7px;
+    width: calc(100% - 12px);
+    min-height: 44px;
+    padding: 5px 6px 5px 8px;
+    gap: 5px;
+  }
+  .tutorial span {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .selection-panel {
+    width: calc(100% - 12px);
+    bottom: 7px;
+  }
+  .selection-panel > span { display: none; }
+
+  .modal {
+    padding: 8px;
+  }
+  .modal-card {
+    width: min(94vw, 430px);
+  }
+  .modal-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (orientation: portrait) and (max-width: 380px) {
+  .hud-chip {
+    min-width: 40px;
+    padding: 0 4px;
+  }
+  .icon-btn {
+    width: 31px;
+  }
+  .brand-copy { display: none; }
+}
