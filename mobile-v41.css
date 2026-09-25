@@ -488,3 +488,148 @@
     font-size: 9px;
   }
 }
+
+
+/* RBTwar v44 — resultado móvil robusto, sin depender de orientation */
+@media (max-width: 1100px) {
+  .experience-overlay {
+    display: grid !important;
+    place-items: center !important;
+    padding: 12px !important;
+    overflow-y: auto !important;
+  }
+
+  .experience-card {
+    width: min(94vw, 560px) !important;
+    max-width: 560px !important;
+    min-height: 0 !important;
+    max-height: calc(100dvh - 24px) !important;
+    display: grid !important;
+    grid-template-columns: 96px minmax(0, 1fr) !important;
+    grid-template-rows: auto auto !important;
+    grid-template-areas:
+      "robot copy"
+      "button button" !important;
+    align-items: center !important;
+    gap: 16px 14px !important;
+    padding: 22px 18px 18px !important;
+    overflow: auto !important;
+  }
+
+  .commander-wrap {
+    grid-area: robot !important;
+    width: 96px !important;
+    min-width: 0 !important;
+    align-self: center !important;
+    justify-self: center !important;
+  }
+
+  .experience-copy {
+    grid-area: copy !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    text-align: left !important;
+    overflow: hidden !important;
+  }
+
+  .experience-kicker {
+    max-width: 100% !important;
+    white-space: nowrap !important;
+  }
+
+  .experience-copy h2 {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 7px 0 4px !important;
+    font-size: clamp(22px, 6vw, 30px) !important;
+    line-height: 1.04 !important;
+    white-space: normal !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+  }
+
+  .experience-copy p {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    font-size: 12px !important;
+    line-height: 1.3 !important;
+    white-space: normal !important;
+  }
+
+  .experience-feature {
+    max-width: 100% !important;
+    margin-top: 9px !important;
+    white-space: normal !important;
+  }
+
+  .experience-continue {
+    grid-area: button !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 54px !important;
+    margin: 0 !important;
+    justify-self: stretch !important;
+    align-self: stretch !important;
+    white-space: normal !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .experience-card {
+    width: calc(100vw - 20px) !important;
+    grid-template-columns: 84px minmax(0, 1fr) !important;
+    gap: 14px 10px !important;
+    padding: 20px 14px 15px !important;
+    border-radius: 22px !important;
+  }
+
+  .commander-wrap {
+    width: 84px !important;
+  }
+
+  .commander-avatar {
+    width: 76px !important;
+    height: 70px !important;
+  }
+
+  .experience-copy h2 {
+    font-size: clamp(21px, 7vw, 27px) !important;
+  }
+
+  .experience-copy p {
+    font-size: 11px !important;
+  }
+
+  .experience-feature {
+    font-size: 9px !important;
+    padding: 5px 8px !important;
+  }
+
+  .experience-continue {
+    min-height: 50px !important;
+    font-size: 12px !important;
+  }
+}
+
+@media (max-width: 350px) {
+  .experience-card {
+    grid-template-columns: 72px minmax(0, 1fr) !important;
+    gap: 12px 8px !important;
+    padding: 18px 12px 14px !important;
+  }
+
+  .commander-wrap {
+    width: 72px !important;
+  }
+
+  .commander-avatar {
+    width: 66px !important;
+    height: 61px !important;
+  }
+
+  .experience-copy h2 {
+    font-size: 20px !important;
+  }
+}
